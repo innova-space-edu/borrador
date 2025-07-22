@@ -1,0 +1,28 @@
+
+<svg viewBox="0 0 300 300" width="220" height="220" xmlns="http://www.w3.org/2000/svg" id="mira-avatar">
+  <g id="blob-group">
+    <path id="blob" d="
+      M150,120 
+      C180,110 200,150 170,170 
+      C190,200 120,210 110,170 
+      C90,140 110,100 150,120
+    " fill="url(#grad)">
+      <animate attributeName="d" dur="3s" repeatCount="indefinite"
+        values="
+          M150,120 C180,110 200,150 170,170 C190,200 120,210 110,170 C90,140 110,100 150,120;
+          M150,130 C190,100 210,160 160,180 C180,210 130,210 100,170 C80,140 120,90 150,130;
+          M150,120 C180,110 200,150 170,170 C190,200 120,210 110,170 C90,140 110,100 150,120" />
+    </path>
+  </g>
+
+  <defs>
+    <!-- Gradiente de colores vibrantes -->
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff9933" />
+      <stop offset="25%" stop-color="#ffff33" />
+      <stop offset="50%" stop-color="#66ff66" />
+      <stop offset="75%" stop-color="#33ffff" />
+      <stop offset="100%" stop-color="#ff66cc" />
+    </linearGradient>
+  </defs>
+</svg>
