@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Innova Space Education</title>
-
-  <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-P64ZZSCZ7Z"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -13,12 +11,9 @@
     gtag('js', new Date());
     gtag('config', 'G-P64ZZSCZ7Z');
   </script>
-
-  <!-- Tailwind + Markdown + MathJax -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
   <style>
     body {
       background: linear-gradient(to bottom right, #000, #312e81, #581c87);
@@ -28,7 +23,6 @@
       margin: 0;
       padding: 0;
     }
-
     #avatar-mira {
       width: 60px;
       height: 60px;
@@ -37,17 +31,14 @@
       opacity: 1;
       filter: grayscale(0.4) brightness(0.8);
     }
-
     #avatar-mira.pulse {
       animation: halo-glow 1.2s infinite alternate;
       filter: drop-shadow(0 0 16px #a855f7) brightness(1.25);
     }
-
     @keyframes halo-glow {
       from { filter: drop-shadow(0 0 12px #4f46e5) brightness(1.18); }
       to   { filter: drop-shadow(0 0 36px #38bdf8) brightness(1.45); }
     }
-
     .chat-markdown table {
       border-collapse: collapse;
       width: 100%;
@@ -55,22 +46,31 @@
       background: #22223b;
       color: #fafafa;
     }
-
     .chat-markdown th, .chat-markdown td {
       border: 1px solid #7f5af0;
       padding: 6px 10px;
       text-align: left;
     }
-
     .chat-markdown th {
       background: #4f378b;
     }
+    #instrucciones-mira {
+      display: none;
+      background: #232146;
+      color: white;
+      border: 2px solid #a855f7;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 1rem;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
   </style>
 </head>
-
 <body class="text-white">
 
-  <!-- Título -->
   <section class="pt-10 text-center">
     <h1 class="text-5xl font-extrabold bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 text-transparent bg-clip-text">
       Innova Space Education
@@ -78,7 +78,6 @@
     <p class="text-lg text-gray-300 mt-3">Educación del futuro. Conectando estudiantes con IA.</p>
   </section>
 
-  <!-- MIRA: Asistente Virtual -->
   <section class="pt-12 pb-10 px-4 relative">
     <div class="max-w-3xl mx-auto relative mt-4">
       <div class="flex items-center justify-center mb-8">
@@ -90,30 +89,31 @@
           <div><strong>MIRA:</strong> ¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?</div>
         </div>
         <div class="flex gap-2">
-          <input
-            type="text"
-            id="user-input"
-            placeholder="Escribe tu mensaje..."
-            class="flex-1 p-2 rounded-md bg-gray-700 text-white border border-gray-600"
-            autocomplete="off"
-            onkeydown="if(event.key==='Enter'){sendMessage(); return false;}"
-          >
-          <button onclick="sendMessage()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-md text-white font-bold">
-            Enviar
-          </button>
+          <input type="text" id="user-input" placeholder="Escribe tu mensaje..." class="flex-1 p-2 rounded-md bg-gray-700 text-white border border-gray-600" autocomplete="off" onkeydown="if(event.key==='Enter'){sendMessage(); return false;}">
+          <button onclick="sendMessage()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-md text-white font-bold">Enviar</button>
+        </div>
+        <div class="flex justify-center mt-4">
+          <button onclick="document.getElementById('instrucciones-mira').style.display = 'block'" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg">¿Cómo usar MIRA?</button>
+        </div>
+        <div id="instrucciones-mira">
+          <h3 class="text-xl font-bold mb-2">Guía de uso</h3>
+          <ul class="list-disc list-inside text-sm">
+            <li>Haz preguntas claras y específicas.</li>
+            <li>Puedes seguir preguntando sobre el mismo tema, MIRA mantendrá el contexto.</li>
+            <li>Para cambiar de tema, solo comienza una nueva pregunta diferente.</li>
+            <li>Si necesitas reiniciar la conversación, escribe: <strong>nuevo tema</strong>.</li>
+            <li>Para fórmulas matemáticas, escribe algo como: <em>¿Cuál es la fórmula de velocidad?</em></li>
+          </ul>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Créditos -->
   <section class="text-center mt-10 mb-6">
     <img src="logo.png" alt="Logo Innova Space" style="max-width:150px; margin:auto; opacity:0.95;">
     <p class="mt-3 text-sm text-gray-400">Creado por <strong>Innova Space</strong> y <strong>OpenAI</strong>.</p>
   </section>
 
-  <!-- Chat IA con memoria -->
   <script src="chat.js"></script>
-
 </body>
 </html>
