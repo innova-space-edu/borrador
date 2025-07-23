@@ -3,117 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Innova Space Education</title>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-P64ZZSCZ7Z"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-P64ZZSCZ7Z');
-  </script>
+  <title>MIRA - Innova Space Education</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
-    body {
-      background: linear-gradient(to bottom right, #000, #312e81, #581c87);
-      color: white;
-      font-family: sans-serif;
-      scroll-behavior: smooth;
-      margin: 0;
-      padding: 0;
-    }
-    #avatar-mira {
-      width: 60px;
-      height: 60px;
-      margin-left: 15px;
-      transition: filter 0.3s, opacity 0.3s;
-      opacity: 1;
-      filter: grayscale(0.4) brightness(0.8);
-    }
     #avatar-mira.pulse {
-      animation: halo-glow 1.2s infinite alternate;
-      filter: drop-shadow(0 0 16px #a855f7) brightness(1.25);
+      animation: pulse 1.5s infinite;
     }
-    @keyframes halo-glow {
-      from { filter: drop-shadow(0 0 12px #4f46e5) brightness(1.18); }
-      to   { filter: drop-shadow(0 0 36px #38bdf8) brightness(1.45); }
-    }
-    .chat-markdown table {
-      border-collapse: collapse;
-      width: 100%;
-      margin: 0.5em 0;
-      background: #22223b;
-      color: #fafafa;
-    }
-    .chat-markdown th, .chat-markdown td {
-      border: 1px solid #7f5af0;
-      padding: 6px 10px;
-      text-align: left;
-    }
-    .chat-markdown th {
-      background: #4f378b;
-    }
-    #instrucciones-mira {
-      display: none;
-      background: #232146;
-      color: white;
-      border: 2px solid #a855f7;
-      padding: 1rem;
-      margin-top: 1rem;
-      border-radius: 1rem;
-      text-align: left;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.8; }
     }
   </style>
 </head>
-<body class="text-white">
+<body class="bg-gradient-to-br from-black via-indigo-900 to-purple-900 text-white font-sans h-screen overflow-hidden">
+  <div class="flex h-full">
+    <!-- Panel lateral -->
+    <div id="side-panel" class="bg-indigo-950 w-16 hover:w-64 transition-all duration-300 p-2 overflow-hidden">
+      <button onclick="crearNuevoChat()" class="text-white text-sm w-full text-left mb-2">+ Nuevo chat</button>
+      <div id="lista-chats" class="text-xs space-y-1"></div>
+    </div>
 
-  <section class="pt-10 text-center">
-    <h1 class="text-5xl font-extrabold bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 text-transparent bg-clip-text">
-      Innova Space Education
-    </h1>
-    <p class="text-lg text-gray-300 mt-3">Educación del futuro. Conectando estudiantes con IA.</p>
-  </section>
-
-  <section class="pt-12 pb-10 px-4 relative">
-    <div class="max-w-3xl mx-auto relative mt-4">
-      <div class="flex items-center justify-center mb-8">
-        <h2 class="text-4xl font-bold text-center mb-0">Asistente IA - MIRA</h2>
-        <object id="avatar-mira" type="image/svg+xml" data="avatar_mira.svg" tabindex="-1" aria-hidden="true"></object>
+    <!-- Área de conversación -->
+    <div class="flex-1 flex flex-col">
+      <div class="flex items-center justify-between p-4 bg-indigo-800">
+        <h1 class="text-xl font-light tracking-wider">MIRA - Asistente Educativa</h1>
+        <img id="avatar-mira" src="avatar_mira.png" alt="MIRA" class="w-14 h-14 rounded-full shadow-lg"/>
       </div>
-      <div class="bg-gray-900 border border-purple-500 rounded-xl p-4 shadow-xl">
-        <div id="chat-box" class="h-72 overflow-y-auto bg-gray-800 p-3 rounded-md mb-4 text-sm space-y-2 text-white chat-markdown" aria-live="polite">
-          <div><strong>MIRA:</strong> ¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?</div>
-        </div>
-        <div class="flex gap-2">
-          <input type="text" id="user-input" placeholder="Escribe tu mensaje..." class="flex-1 p-2 rounded-md bg-gray-700 text-white border border-gray-600" autocomplete="off" onkeydown="if(event.key==='Enter'){sendMessage(); return false;}">
-          <button onclick="sendMessage()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-md text-white font-bold">Enviar</button>
-        </div>
-        <div class="flex justify-center mt-4">
-          <button onclick="document.getElementById('instrucciones-mira').style.display = 'block'" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg">¿Cómo usar MIRA?</button>
-        </div>
-        <div id="instrucciones-mira">
-          <h3 class="text-xl font-bold mb-2">Guía de uso</h3>
-          <ul class="list-disc list-inside text-sm">
-            <li>Haz preguntas claras y específicas.</li>
-            <li>Puedes seguir preguntando sobre el mismo tema, MIRA mantendrá el contexto.</li>
-            <li>Para cambiar de tema, solo comienza una nueva pregunta diferente.</li>
-            <li>Si necesitas reiniciar la conversación, escribe: <strong>nuevo tema</strong>.</li>
-            <li>Para fórmulas matemáticas, escribe algo como: <em>¿Cuál es la fórmula de velocidad?</em></li>
-          </ul>
-        </div>
+      <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-2 text-sm"></div>
+      <div class="p-4 bg-indigo-950">
+        <input id="user-input" type="text" placeholder="Escribe tu mensaje..." class="w-full px-4 py-2 rounded text-black"/>
       </div>
     </div>
-  </section>
-
-  <section class="text-center mt-10 mb-6">
-    <img src="logo.png" alt="Logo Innova Space" style="max-width:150px; margin:auto; opacity:0.95;">
-    <p class="mt-3 text-sm text-gray-400">Creado por <strong>Innova Space</strong> y <strong>OpenAI</strong>.</p>
-  </section>
-
+  </div>
   <script src="chat.js"></script>
 </body>
 </html>
