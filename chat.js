@@ -1,136 +1,158 @@
-// chat.js actualizado para MIRA
+let chats = JSON.parse(localStorage.getItem('chats')) || {};
+let currentChatId = null;
+let muted = false;
 
-let currentChatId = Date.now();
-let chats = {};
-let isMuted = false;
-let lastActivity = Date.now();
-const chatBox = document.getElementById("chatBox");
-const chatList = document.getElementById("chatList");
-const userInput = document.getElementById("userInput");
-const avatar = document.getElementById("avatar");
+// Elementos
+const chatContainer = document.getElementById('chat-container');
+const userInput = document.getElementById('user-input');
+const sendButton = document.getElementById('send-button');
+const chatList = document.getElementById('chat-list');
+const toggleSidebar = document.getElementById('toggle-sidebar');
+const sidebar = document.getElementById('sidebar');
+const newChatBtn = document.getElementById('new-chat');
+const avatar = document.getElementById('mira-avatar');
+const muteButton = document.getElementById('mute-button');
 
-// Iniciar
-loadChat(currentChatId);
-addChatToList(currentChatId);
-
-function sendMessage() {
-  const text = userInput.value.trim();
-  if (!text) return;
-  addMessage("Tú", text);
-  userInput.value = "";
-  simulateMiraResponse(text);
-  lastActivity = Date.now();
-}
-
-function handleKey(event) {
-  if (event.key === "Enter") sendMessage();
-}
-
-function addMessage(sender, text) {
-  const bubble = document.createElement("div");
-  bubble.className = sender === "Tú" ? "mb-2 text-left" : "mb-4 text-left";
-  bubble.innerHTML = `<strong>${sender}:</strong><br>${marked.parse(text)}`;
-  chatBox.appendChild(bubble);
-  MathJax.typeset();
-  chatBox.scrollTop = chatBox.scrollHeight;
-  speakIfNeeded(sender, text);
-  saveMessage(sender, text);
-}
-
-function speakIfNeeded(sender, text) {
-  if (sender !== "MIRA" || isMuted) return;
-  const cleanText = text.replace(/\$\$(.*?)\$\$/g, "").replace(/`.*?`/g, "");
-  const utterance = new SpeechSynthesisUtterance(cleanText);
-  utterance.lang = "es-ES";
-  speechSynthesis.speak(utterance);
-  animateAvatar();
-}
-
-function simulateMiraResponse(userText) {
-  const response = generateResponse(userText);
-  setTimeout(() => {
-    addMessage("MIRA", response);
-    addSuggestions();
-  }, 500);
-}
-
-function generateResponse(input) {
-  if (input.toLowerCase().includes("velocidad media")) {
-    return `**\uD83D\uDCC8 Velocidad Media**\n\nLa fórmula para calcular la velocidad media es:\n\n$$Vm = \frac{\Delta x}{\Delta t}$$\n\n**Donde:**\n- $\n\Delta x$ es la distancia recorrida.\n- $\n\Delta t$ es el tiempo.\n\n**Ejemplo:**\nSi recorres 200 km en 4 h, entonces:\n\n$$Vm = \frac{200}{4} = 50 \text{ km/h}$$`;
-  }
-  return `Gracias por tu mensaje. ¿Quieres que profundice en este tema o ver un ejemplo?`;
-}
-
-function addSuggestions() {
-  const sug = document.createElement("div");
-  sug.innerHTML = `
-  <p class="text-sm mt-2 italic text-purple-300">\uD83D\uDCA1 Sugerencias: 
-    <a href="#" onclick="userInput.value='Dame un resumen';sendMessage()">Resumen</a> |
-    <a href="#" onclick="userInput.value='Dame un ejemplo';sendMessage()">Ejemplo</a> |
-    <a href="#" onclick="userInput.value='Avanza con este tema';sendMessage()">Avanzar</a>
-  </p>`;
-  chatBox.appendChild(sug);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function toggleMute() {
-  isMuted = !isMuted;
-  document.getElementById("muteBtn").textContent = isMuted ? "🔇" : "🔊";
-}
-
-function newChat() {
-  const now = Date.now();
-  chats[currentChatId] = chatBox.innerHTML;
-  currentChatId = now;
-  loadChat(currentChatId);
-  addChatToList(currentChatId);
-}
-
-function saveMessage(sender, text) {
-  if (!chats[currentChatId]) chats[currentChatId] = "";
-  chats[currentChatId] += `<div><strong>${sender}:</strong><br>${marked.parse(text)}</div>`;
-}
-
-function loadChat(id) {
-  chatBox.innerHTML = chats[id] || "";
-}
-
-function addChatToList(id) {
-  const btn = document.createElement("button");
-  btn.className = "block mt-1 text-left text-sm text-white hover:underline";
-  btn.textContent = `Chat ${id}`;
-  btn.onclick = () => {
-    chats[currentChatId] = chatBox.innerHTML;
-    currentChatId = id;
-    loadChat(id);
-  };
-  chatList.appendChild(btn);
-}
-
-function animateAvatar() {
-  avatar.style.transform = "scale(1.1) rotate(2deg)";
-  setTimeout(() => avatar.style.transform = "scale(1) rotate(0deg)", 500);
-}
-
-// Avatar movible
-avatar.onmousedown = function (e) {
-  e.preventDefault();
-  let shiftX = e.clientX - avatar.getBoundingClientRect().left;
-  let shiftY = e.clientY - avatar.getBoundingClientRect().top;
-
-  function moveAt(pageX, pageY) {
-    avatar.style.left = pageX - shiftX + 'px';
-    avatar.style.top = pageY - shiftY + 'px';
+// Drag para el avatar
+avatar.addEventListener('mousedown', function (e) {
     avatar.style.position = 'fixed';
-  }
+    function moveAt(x, y) {
+        avatar.style.left = x - avatar.offsetWidth / 2 + 'px';
+        avatar.style.top = y - avatar.offsetHeight / 2 + 'px';
+    }
+    moveAt(e.clientX, e.clientY);
+    function onMouseMove(e) {
+        moveAt(e.clientX, e.clientY);
+    }
+    document.addEventListener('mousemove', onMouseMove);
+    avatar.onmouseup = function () {
+        document.removeEventListener('mousemove', onMouseMove);
+        avatar.onmouseup = null;
+    };
+});
 
-  function onMouseMove(e) {
-    moveAt(e.pageX, e.pageY);
-  }
+// Alternar volumen
+muteButton.addEventListener('click', () => {
+    muted = !muted;
+    muteButton.innerHTML = muted ? '🔈' : '🔊';
+});
 
-  document.addEventListener('mousemove', onMouseMove);
-  avatar.onmouseup = function () {
-    document.removeEventListener('mousemove', onMouseMove);
-    avatar.onmouseup = null;
-  };
-};
+// Alternar menú
+toggleSidebar.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+});
+
+// Enviar mensaje
+sendButton.addEventListener('click', sendMessage);
+userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendMessage();
+});
+
+// Crear nuevo chat
+newChatBtn.addEventListener('click', () => {
+    currentChatId = Date.now().toString();
+    chats[currentChatId] = [];
+    localStorage.setItem('chats', JSON.stringify(chats));
+    renderChatList();
+    renderChat();
+});
+
+// Cargar chats
+function renderChatList() {
+    chatList.innerHTML = '';
+    Object.keys(chats).forEach((chatId) => {
+        const li = document.createElement('li');
+        li.textContent = `Chat ${chatId}`;
+        li.onclick = () => {
+            currentChatId = chatId;
+            renderChat();
+        };
+        chatList.appendChild(li);
+    });
+}
+
+// Mostrar conversación
+function renderChat() {
+    chatContainer.innerHTML = '';
+    if (!currentChatId) return;
+    chats[currentChatId].forEach((msg) => {
+        const div = document.createElement('div');
+        div.className = msg.sender;
+        div.innerHTML = `<strong>${msg.sender === 'user' ? 'Tú' : 'MIRA'}:</strong> ${msg.text}`;
+        chatContainer.appendChild(div);
+    });
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    MathJax.typeset(); // Renderiza LaTeX
+}
+
+// Enviar mensaje y responder
+function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text) return;
+    const message = { sender: 'user', text };
+    chats[currentChatId].push(message);
+    userInput.value = '';
+    renderChat();
+
+    // Simulación de respuesta
+    setTimeout(() => {
+        const reply = generarRespuesta(text);
+        chats[currentChatId].push({ sender: 'MIRA', text: reply });
+        localStorage.setItem('chats', JSON.stringify(chats));
+        renderChat();
+        speak(reply);
+        sugerenciasExtras();
+    }, 800);
+}
+
+// Respuesta simulada
+function generarRespuesta(input) {
+    if (input.toLowerCase().includes("velocidad media")) {
+        return `
+        \\[
+        \\text{Velocidad Media (Vm)} = \\frac{\\text{Distancia}}{\\text{Tiempo}}
+        \\]
+        Por ejemplo, si recorres 100 km en 2 horas: \\( Vm = \\frac{100}{2} = 50 \\text{ km/h} \\)
+        `;
+    }
+    return `¡Gracias por tu pregunta! 😊 Estoy buscando la mejor manera de ayudarte. ¿Quieres que te dé un ejemplo o que avancemos con otro tema?`;
+}
+
+// Texto a voz
+function speak(text) {
+    if (muted) return;
+    const utterance = new SpeechSynthesisUtterance();
+    const clean = text.replace(/\$\$.*?\$\$|\\\[.*?\\\]|\\\(.*?\\\)/g, ''); // evita leer LaTeX
+    utterance.text = clean;
+    utterance.lang = 'es-ES';
+    speechSynthesis.speak(utterance);
+}
+
+// Sugerencias de seguimiento
+function sugerenciasExtras() {
+    const div = document.createElement('div');
+    div.className = 'mira';
+    div.innerHTML = `
+        <em><b>Sugerencias:</b></em>
+        <a href="#" onclick="insertSugerencia('¿Puedes darme un ejemplo concreto?')">Ejemplo</a> |
+        <a href="#" onclick="insertSugerencia('¿Qué sigue después de esto?')">Avanzar</a> |
+        <a href="#" onclick="insertSugerencia('Explícalo como si tuviera 10 años')">Simplificar</a>
+    `;
+    chatContainer.appendChild(div);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Insertar sugerencia como texto
+function insertSugerencia(text) {
+    userInput.value = text;
+    sendMessage();
+}
+
+// Inicializar
+if (Object.keys(chats).length === 0) {
+    newChatBtn.click();
+} else {
+    currentChatId = Object.keys(chats)[0];
+    renderChatList();
+    renderChat();
+}
