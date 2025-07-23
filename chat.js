@@ -1,64 +1,79 @@
-// chat.js actualizado con panel lateral, sugerencias, memoria por chat, voz, iconos
+// chat.js actualizado con mejoras completas estilo ChatGPT
 const API_KEY = "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";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
-let chats = JSON.parse(localStorage.getItem("mira_chats")) || {};
-let chatId = localStorage.getItem("mira_chat_actual") || crearNuevoChat();
-
+let historial = [];
+let temaActual = null;
 let tiempoUltimaInteraccion = Date.now();
-const LIMITE_TIEMPO = 5 * 60 * 1000; // 5 minutos
+const LIMITE_TIEMPO = 10 * 60 * 1000; // 10 minutos
 
-const SYSTEM_PROMPT = `Eres MIRA, una IA educativa de Innova Space. Responde con claridad, usando ejemplos, voz hablada y sugerencias didácticas. Usa iconos según el contenido. Siempre habla.`;
+const SYSTEM_PROMPT = `
+Eres MIRA, una asistente educativa amigable y profesional, creada por Innova Space y OpenAI. Tu rol es guiar, explicar y conversar en español de forma clara, ordenada y didáctica.
+Usa listas, títulos, íconos y tablas cuando sea útil. Incluye preguntas sugeridas al final de cada respuesta para motivar al usuario a seguir aprendiendo.
+No incluyas advertencias ni asteriscos. Siempre responde en español.
+`;
 
-function crearNuevoChat() {
-  const id = Date.now().toString();
-  chats[id] = [];
-  localStorage.setItem("mira_chat_actual", id);
-  localStorage.setItem("mira_chats", JSON.stringify(chats));
-  renderListaChats();
-  document.getElementById("chat-box").innerHTML = "";
-  return id;
+function detectarTema(mensaje) {
+  const temas = {
+    "riesgo": "riesgos naturales",
+    "clima": "clima y medioambiente",
+    "salud": "salud y bienestar",
+    "inteligencia": "inteligencia artificial",
+    "robot": "tecnología y robótica",
+    "internet": "tecnología e información",
+    "planificación": "planificaciones escolares",
+    "profesor": "educación",
+    "satélite": "tecnología espacial"
+  };
+  mensaje = mensaje.toLowerCase();
+  return Object.keys(temas).find(p => mensaje.includes(p)) ? temas[Object.keys(temas).find(p => mensaje.includes(p))] : null;
 }
 
-function renderListaChats() {
-  const lista = document.getElementById("lista-chats");
-  if (!lista) return;
-  lista.innerHTML = Object.keys(chats).map(id => `<div onclick="cambiarChat('${id}')" class="cursor-pointer hover:text-purple-400">Chat ${id}</div>`).join("");
+function actualizarTema(mensaje) {
+  const nuevoTema = detectarTema(mensaje);
+  const ahora = Date.now();
+  if (nuevoTema) {
+    temaActual = nuevoTema;
+    tiempoUltimaInteraccion = ahora;
+  } else if (ahora - tiempoUltimaInteraccion > LIMITE_TIEMPO) {
+    temaActual = null;
+    historial = [];
+  }
 }
 
-function cambiarChat(id) {
-  chatId = id;
-  localStorage.setItem("mira_chat_actual", id);
-  renderChat();
+function generarPrompt(mensaje) {
+  actualizarTema(mensaje);
+  const contexto = temaActual ? `Tema actual: ${temaActual}\n` : "";
+  const his = historial.slice(-6).map(m => `Usuario: ${m.u}\nMIRA: ${m.m}`).join("\n");
+  return `${contexto}${his}\nUsuario: ${mensaje}\nMIRA:`;
 }
 
-function renderChat() {
-  const chat = chats[chatId] || [];
-  const box = document.getElementById("chat-box");
-  box.innerHTML = chat.map(msg => `<div><strong>Tú:</strong> ${escapeHtml(msg.u)}</div><div><strong>MIRA:</strong> <span class='chat-markdown'>${renderMarkdown(msg.m)}</span></div>`).join("");
-  box.scrollTop = box.scrollHeight;
+function agregarHistorial(u, m) {
+  historial.push({ u, m });
+  tiempoUltimaInteraccion = Date.now();
 }
 
-function setAvatarTalking(active) {
+function setAvatarTalking(isTalking) {
   const avatar = document.getElementById("avatar-mira");
-  if (avatar) avatar.classList.toggle("pulse", active);
+  if (!avatar) return;
+  avatar.classList.toggle("pulse", isTalking);
 }
 
-function escapeHtml(text) {
-  return text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-
-function plainTextForVoice(text) {
-  return text.replace(/\*\*|\*|__|_|\$.*?\$/g, "").replace(/\s+/g, " ").trim();
+function plainTextForVoice(markdown) {
+  return markdown.replace(/[*_~#>`]/g, "").replace(/\$\$.*?\$\$/g, "").replace(/\$.*?\$/g, "").replace(/\s+/g, ' ').trim();
 }
 
 function speak(text) {
   try {
-    const msg = new SpeechSynthesisUtterance(plainTextForVoice(text));
+    const plain = plainTextForVoice(text);
+    if (!plain) return;
+    const msg = new SpeechSynthesisUtterance(plain);
     msg.lang = "es-ES";
+    msg.rate = 1;
     window.speechSynthesis.cancel();
     setAvatarTalking(true);
     msg.onend = () => setAvatarTalking(false);
+    msg.onerror = () => setAvatarTalking(false);
     window.speechSynthesis.speak(msg);
   } catch {
     setAvatarTalking(false);
@@ -69,38 +84,22 @@ function renderMarkdown(text) {
   return marked.parse(text);
 }
 
-function generarPrompt(mensaje) {
-  const ahora = Date.now();
-  if (ahora - tiempoUltimaInteraccion > LIMITE_TIEMPO) chats[chatId] = [];
-  tiempoUltimaInteraccion = ahora;
-  const his = chats[chatId].slice(-5).map(m => `Usuario: ${m.u}\nMIRA: ${m.m}`).join("\n");
-  return `${his}\nUsuario: ${mensaje}\nMIRA:`;
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
 }
 
-async function sendMessage() {
-  const input = document.getElementById("user-input");
-  const box = document.getElementById("chat-box");
-  const msg = input.value.trim();
-  if (!msg) return;
-
-  box.innerHTML += `<div><strong>Tú:</strong> ${escapeHtml(msg)}</div>`;
-  input.value = "";
-  box.scrollTop = box.scrollHeight;
-
-  const prompt = generarPrompt(msg);
-  const res = await obtenerRespuestaIA(prompt);
-  chats[chatId].push({ u: msg, m: res });
-  localStorage.setItem("mira_chats", JSON.stringify(chats));
-
-  const html = renderMarkdown(res);
-  box.innerHTML += `<div><strong>MIRA:</strong> <span class='chat-markdown'>${html}</span></div>`;
-  sugerenciasDidacticas(box);
-  speak(res);
-  box.scrollTop = box.scrollHeight;
+function showThinking() {
+  const chatBox = document.getElementById("chat-box");
+  const thinking = document.createElement("div");
+  thinking.id = "thinking";
+  thinking.className = "text-purple-300 italic";
+  thinking.innerHTML = `<span class="animate-pulse">MIRA está pensando<span class="animate-bounce">...</span></span>`;
+  chatBox.appendChild(thinking);
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 async function obtenerRespuestaIA(prompt) {
-  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${API_KEY}`,
@@ -115,31 +114,50 @@ async function obtenerRespuestaIA(prompt) {
       temperature: 0.7
     })
   });
-  const data = await r.json();
-  return data.choices?.[0]?.message?.content || "Lo siento, no encontré respuesta.";
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || "Lo siento, no encontré una respuesta.";
 }
 
-function sugerenciasDidacticas(box) {
-  const s = document.createElement("div");
-  s.className = "text-xs text-purple-300 italic mt-2";
-  s.innerHTML = `✨ Sugerencias: 
-    <button onclick="enviarSugerencia('Déjame darte un resumen de lo que llevamos.')" class="underline">Resumen</button> |
-    <button onclick="enviarSugerencia('Muéstrame un ejemplo relacionado.')" class="underline">Ejemplo</button> |
-    <button onclick="enviarSugerencia('Quiero avanzar al siguiente tema.')" class="underline">Avanzar</button>`;
-  box.appendChild(s);
+async function sendMessage() {
+  const input = document.getElementById("user-input");
+  const chatBox = document.getElementById("chat-box");
+  const userMessage = input.value.trim();
+  if (!userMessage) return;
+
+  chatBox.innerHTML += `<div class='mb-2'><strong>Tú:</strong> ${escapeHtml(userMessage)}</div>`;
+  input.value = "";
+  showThinking();
+
+  try {
+    const prompt = generarPrompt(userMessage);
+    const respuesta = await obtenerRespuestaIA(prompt);
+
+    document.getElementById("thinking")?.remove();
+    agregarHistorial(userMessage, respuesta);
+
+    const html = renderMarkdown(respuesta);
+    chatBox.innerHTML += `<div class='mb-4'><strong>MIRA:</strong> <div class='chat-markdown'>${html}</div></div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+    speak(respuesta);
+    if (window.MathJax) MathJax.typesetPromise();
+  } catch (error) {
+    document.getElementById("thinking")?.remove();
+    chatBox.innerHTML += `<div><strong>MIRA:</strong> Error al conectar con la IA.</div>`;
+    setAvatarTalking(false);
+    console.error(error);
+  }
 }
 
-function enviarSugerencia(texto) {
-  document.getElementById("user-input").value = texto;
-  sendMessage();
-}
-
-document.getElementById("user-input").addEventListener("keydown", e => {
-  if (e.key === "Enter") sendMessage();
+document.getElementById("user-input").addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    sendMessage();
+  }
 });
 
 window.addEventListener("DOMContentLoaded", () => {
-  renderListaChats();
-  renderChat();
-  speak("Hola, soy MIRA. ¿En qué puedo ayudarte hoy?");
+  setTimeout(() => {
+    speak("¡Hola! Soy MIRA, tu asistente educativa. ¿En qué te puedo ayudar hoy?");
+    setAvatarTalking(false);
+  }, 800);
 });
