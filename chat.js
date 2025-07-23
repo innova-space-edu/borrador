@@ -1,163 +1,136 @@
-// chat.js actualizado con mejoras completas estilo ChatGPT
-const API_KEY = "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";
-const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+// chat.js actualizado para MIRA
 
-let historial = [];
-let temaActual = null;
-let tiempoUltimaInteraccion = Date.now();
-const LIMITE_TIEMPO = 10 * 60 * 1000; // 10 minutos
+let currentChatId = Date.now();
+let chats = {};
+let isMuted = false;
+let lastActivity = Date.now();
+const chatBox = document.getElementById("chatBox");
+const chatList = document.getElementById("chatList");
+const userInput = document.getElementById("userInput");
+const avatar = document.getElementById("avatar");
 
-const SYSTEM_PROMPT = `
-Eres MIRA, una asistente educativa amigable y profesional, creada por Innova Space y OpenAI. Tu rol es guiar, explicar y conversar en español de forma clara, ordenada y didáctica.
-Usa listas, títulos, íconos y tablas cuando sea útil. Incluye preguntas sugeridas al final de cada respuesta para motivar al usuario a seguir aprendiendo.
-No incluyas advertencias ni asteriscos. Siempre responde en español.
-`;
+// Iniciar
+loadChat(currentChatId);
+addChatToList(currentChatId);
 
-function detectarTema(mensaje) {
-  const temas = {
-    "riesgo": "riesgos naturales",
-    "clima": "clima y medioambiente",
-    "salud": "salud y bienestar",
-    "inteligencia": "inteligencia artificial",
-    "robot": "tecnología y robótica",
-    "internet": "tecnología e información",
-    "planificación": "planificaciones escolares",
-    "profesor": "educación",
-    "satélite": "tecnología espacial"
-  };
-  mensaje = mensaje.toLowerCase();
-  return Object.keys(temas).find(p => mensaje.includes(p)) ? temas[Object.keys(temas).find(p => mensaje.includes(p))] : null;
+function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
+  addMessage("Tú", text);
+  userInput.value = "";
+  simulateMiraResponse(text);
+  lastActivity = Date.now();
 }
 
-function actualizarTema(mensaje) {
-  const nuevoTema = detectarTema(mensaje);
-  const ahora = Date.now();
-  if (nuevoTema) {
-    temaActual = nuevoTema;
-    tiempoUltimaInteraccion = ahora;
-  } else if (ahora - tiempoUltimaInteraccion > LIMITE_TIEMPO) {
-    temaActual = null;
-    historial = [];
+function handleKey(event) {
+  if (event.key === "Enter") sendMessage();
+}
+
+function addMessage(sender, text) {
+  const bubble = document.createElement("div");
+  bubble.className = sender === "Tú" ? "mb-2 text-left" : "mb-4 text-left";
+  bubble.innerHTML = `<strong>${sender}:</strong><br>${marked.parse(text)}`;
+  chatBox.appendChild(bubble);
+  MathJax.typeset();
+  chatBox.scrollTop = chatBox.scrollHeight;
+  speakIfNeeded(sender, text);
+  saveMessage(sender, text);
+}
+
+function speakIfNeeded(sender, text) {
+  if (sender !== "MIRA" || isMuted) return;
+  const cleanText = text.replace(/\$\$(.*?)\$\$/g, "").replace(/`.*?`/g, "");
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  utterance.lang = "es-ES";
+  speechSynthesis.speak(utterance);
+  animateAvatar();
+}
+
+function simulateMiraResponse(userText) {
+  const response = generateResponse(userText);
+  setTimeout(() => {
+    addMessage("MIRA", response);
+    addSuggestions();
+  }, 500);
+}
+
+function generateResponse(input) {
+  if (input.toLowerCase().includes("velocidad media")) {
+    return `**\uD83D\uDCC8 Velocidad Media**\n\nLa fórmula para calcular la velocidad media es:\n\n$$Vm = \frac{\Delta x}{\Delta t}$$\n\n**Donde:**\n- $\n\Delta x$ es la distancia recorrida.\n- $\n\Delta t$ es el tiempo.\n\n**Ejemplo:**\nSi recorres 200 km en 4 h, entonces:\n\n$$Vm = \frac{200}{4} = 50 \text{ km/h}$$`;
   }
+  return `Gracias por tu mensaje. ¿Quieres que profundice en este tema o ver un ejemplo?`;
 }
 
-function generarPrompt(mensaje) {
-  actualizarTema(mensaje);
-  const contexto = temaActual ? `Tema actual: ${temaActual}\n` : "";
-  const his = historial.slice(-6).map(m => `Usuario: ${m.u}\nMIRA: ${m.m}`).join("\n");
-  return `${contexto}${his}\nUsuario: ${mensaje}\nMIRA:`;
-}
-
-function agregarHistorial(u, m) {
-  historial.push({ u, m });
-  tiempoUltimaInteraccion = Date.now();
-}
-
-function setAvatarTalking(isTalking) {
-  const avatar = document.getElementById("avatar-mira");
-  if (!avatar) return;
-  avatar.classList.toggle("pulse", isTalking);
-}
-
-function plainTextForVoice(markdown) {
-  return markdown.replace(/[*_~#>`]/g, "").replace(/\$\$.*?\$\$/g, "").replace(/\$.*?\$/g, "").replace(/\s+/g, ' ').trim();
-}
-
-function speak(text) {
-  try {
-    const plain = plainTextForVoice(text);
-    if (!plain) return;
-    const msg = new SpeechSynthesisUtterance(plain);
-    msg.lang = "es-ES";
-    msg.rate = 1;
-    window.speechSynthesis.cancel();
-    setAvatarTalking(true);
-    msg.onend = () => setAvatarTalking(false);
-    msg.onerror = () => setAvatarTalking(false);
-    window.speechSynthesis.speak(msg);
-  } catch {
-    setAvatarTalking(false);
-  }
-}
-
-function renderMarkdown(text) {
-  return marked.parse(text);
-}
-
-function escapeHtml(text) {
-  return text.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
-}
-
-function showThinking() {
-  const chatBox = document.getElementById("chat-box");
-  const thinking = document.createElement("div");
-  thinking.id = "thinking";
-  thinking.className = "text-purple-300 italic";
-  thinking.innerHTML = `<span class="animate-pulse">MIRA está pensando<span class="animate-bounce">...</span></span>`;
-  chatBox.appendChild(thinking);
+function addSuggestions() {
+  const sug = document.createElement("div");
+  sug.innerHTML = `
+  <p class="text-sm mt-2 italic text-purple-300">\uD83D\uDCA1 Sugerencias: 
+    <a href="#" onclick="userInput.value='Dame un resumen';sendMessage()">Resumen</a> |
+    <a href="#" onclick="userInput.value='Dame un ejemplo';sendMessage()">Ejemplo</a> |
+    <a href="#" onclick="userInput.value='Avanza con este tema';sendMessage()">Avanzar</a>
+  </p>`;
+  chatBox.appendChild(sug);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-async function obtenerRespuestaIA(prompt) {
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.7
-    })
-  });
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || "Lo siento, no encontré una respuesta.";
+function toggleMute() {
+  isMuted = !isMuted;
+  document.getElementById("muteBtn").textContent = isMuted ? "🔇" : "🔊";
 }
 
-async function sendMessage() {
-  const input = document.getElementById("user-input");
-  const chatBox = document.getElementById("chat-box");
-  const userMessage = input.value.trim();
-  if (!userMessage) return;
-
-  chatBox.innerHTML += `<div class='mb-2'><strong>Tú:</strong> ${escapeHtml(userMessage)}</div>`;
-  input.value = "";
-  showThinking();
-
-  try {
-    const prompt = generarPrompt(userMessage);
-    const respuesta = await obtenerRespuestaIA(prompt);
-
-    document.getElementById("thinking")?.remove();
-    agregarHistorial(userMessage, respuesta);
-
-    const html = renderMarkdown(respuesta);
-    chatBox.innerHTML += `<div class='mb-4'><strong>MIRA:</strong> <div class='chat-markdown'>${html}</div></div>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
-    speak(respuesta);
-    if (window.MathJax) MathJax.typesetPromise();
-  } catch (error) {
-    document.getElementById("thinking")?.remove();
-    chatBox.innerHTML += `<div><strong>MIRA:</strong> Error al conectar con la IA.</div>`;
-    setAvatarTalking(false);
-    console.error(error);
-  }
+function newChat() {
+  const now = Date.now();
+  chats[currentChatId] = chatBox.innerHTML;
+  currentChatId = now;
+  loadChat(currentChatId);
+  addChatToList(currentChatId);
 }
 
-document.getElementById("user-input").addEventListener("keydown", function (event) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    sendMessage();
-  }
-});
+function saveMessage(sender, text) {
+  if (!chats[currentChatId]) chats[currentChatId] = "";
+  chats[currentChatId] += `<div><strong>${sender}:</strong><br>${marked.parse(text)}</div>`;
+}
 
-window.addEventListener("DOMContentLoaded", () => {
-  setTimeout(() => {
-    speak("¡Hola! Soy MIRA, tu asistente educativa. ¿En qué te puedo ayudar hoy?");
-    setAvatarTalking(false);
-  }, 800);
-});
+function loadChat(id) {
+  chatBox.innerHTML = chats[id] || "";
+}
+
+function addChatToList(id) {
+  const btn = document.createElement("button");
+  btn.className = "block mt-1 text-left text-sm text-white hover:underline";
+  btn.textContent = `Chat ${id}`;
+  btn.onclick = () => {
+    chats[currentChatId] = chatBox.innerHTML;
+    currentChatId = id;
+    loadChat(id);
+  };
+  chatList.appendChild(btn);
+}
+
+function animateAvatar() {
+  avatar.style.transform = "scale(1.1) rotate(2deg)";
+  setTimeout(() => avatar.style.transform = "scale(1) rotate(0deg)", 500);
+}
+
+// Avatar movible
+avatar.onmousedown = function (e) {
+  e.preventDefault();
+  let shiftX = e.clientX - avatar.getBoundingClientRect().left;
+  let shiftY = e.clientY - avatar.getBoundingClientRect().top;
+
+  function moveAt(pageX, pageY) {
+    avatar.style.left = pageX - shiftX + 'px';
+    avatar.style.top = pageY - shiftY + 'px';
+    avatar.style.position = 'fixed';
+  }
+
+  function onMouseMove(e) {
+    moveAt(e.pageX, e.pageY);
+  }
+
+  document.addEventListener('mousemove', onMouseMove);
+  avatar.onmouseup = function () {
+    document.removeEventListener('mousemove', onMouseMove);
+    avatar.onmouseup = null;
+  };
+};
