@@ -4,99 +4,101 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MIRA - Asistente Educativa</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/forms@0.5.2/dist/forms.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="chat.js"></script>
+  <script defer src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script defer id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #1b1f3b, #2b2d42);
       color: white;
-      height: 100vh;
       overflow: hidden;
     }
-    #avatar {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 110px;
-      height: 110px;
-      z-index: 50;
-      cursor: move;
-      transition: transform 0.3s ease;
-    }
     #sidebar {
-      width: 250px;
-      background-color: #2a0845;
-      transition: width 0.3s ease;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      background-color: #3d0c59;
+      padding: 10px;
+      width: 220px;
+      transition: transform 0.3s ease;
+      z-index: 10;
     }
-    #sidebar.collapsed {
-      width: 40px;
+    #sidebar.closed {
+      transform: translateX(-100%);
     }
     #toggleSidebar {
-      background-color: #4717f6;
+      background-color: transparent;
       color: white;
       border: none;
-      padding: 5px 10px;
+      font-size: 24px;
       cursor: pointer;
     }
-    .chat-container {
-      height: calc(100vh - 40px);
+    #chat-container {
+      margin-left: 220px;
+      padding: 20px;
       overflow-y: auto;
-      padding: 1rem;
+      height: calc(100vh - 60px);
     }
-    .input-area {
+    .chat-entry {
+      margin: 10px 0;
+    }
+    #input-container {
+      position: fixed;
+      bottom: 0;
+      left: 220px;
+      right: 0;
+      background-color: #1f1f2e;
+      padding: 10px;
       display: flex;
-      align-items: center;
-      padding: 0.5rem;
-      background: #0f3460;
     }
-    .input-area input {
+    #input {
       flex: 1;
-      padding: 0.5rem;
-      border-radius: 0.5rem;
+      padding: 10px;
+      font-size: 16px;
       border: none;
-      margin-right: 0.5rem;
-      font-size: 1rem;
+      border-radius: 5px;
     }
-    #muteBtn {
+    #volume-btn {
       background: none;
       border: none;
       color: white;
-      font-size: 1.3rem;
+      font-size: 20px;
       cursor: pointer;
     }
-    .respuesta-icono {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      margin-right: 8px;
+    #avatar {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      width: 100px;
+      z-index: 99;
+      cursor: move;
+      transition: transform 0.3s ease-in-out;
     }
   </style>
 </head>
 <body>
-  <div class="flex h-screen">
-    <div id="sidebar" class="flex flex-col p-2">
-      <button id="toggleSidebar">☰</button>
-      <button onclick="newChat()" class="mt-4">+ Nuevo chat</button>
-      <div id="chatList" class="mt-2 text-sm overflow-auto"></div>
-    </div>
-    <div class="flex flex-col flex-1">
-      <div class="flex justify-between items-center bg-purple-900 px-6 py-2">
-        <h1 class="text-xl font-bold">MIRA - Asistente Educativa</h1>
-        <button id="muteBtn" onclick="toggleMute()">🔊</button>
-      </div>
-      <div id="chatBox" class="chat-container"></div>
-      <div class="input-area">
-        <input type="text" id="userInput" placeholder="Escribe aquí..." onkeydown="handleKey(event)" />
-        <button onclick="sendMessage()">Enviar</button>
-      </div>
-    </div>
-    <img id="avatar" src="avatar_mira.png" alt="MIRA avatar" draggable="true">
+  <div id="sidebar">
+    <button id="toggleSidebar">☰</button>
+    <br>
+    <button onclick="startNewChat()">+ Nuevo chat</button>
+    <div id="chat-list"></div>
   </div>
 
-  <script src="chat.js"></script>
+  <div id="chat-container">
+    <h2>MIRA - Asistente Educativa</h2>
+    <button id="volume-btn" onclick="toggleVolume()">🔊</button>
+    <div id="messages"></div>
+  </div>
+
+  <div id="input-container">
+    <input id="input" type="text" placeholder="Escribe aquí..." onkeydown="handleInput(event)" />
+  </div>
+
+  <img id="avatar" src="avatar_mira.svg" alt="MIRA avatar" draggable="true">
 </body>
 </html>
