@@ -2,42 +2,77 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MIRA - Innova Space Education</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MIRA - Asistente Educativa</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script src="chat.js" defer></script>
+  <link rel="icon" type="image/png" href="avatar_mira.png">
   <style>
-    #avatar-mira.pulse {
-      animation: pulse 1.5s infinite;
+    * {
+      scroll-behavior: smooth;
     }
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 0.8; }
-      50% { transform: scale(1.05); opacity: 1; }
-      100% { transform: scale(1); opacity: 0.8; }
+    .chat-sugerencia a {
+      @apply text-purple-300 hover:underline mx-1;
+    }
+    .chat-markdown p {
+      margin-bottom: 0.5rem;
+    }
+    .chat-markdown ul {
+      list-style: disc;
+      padding-left: 1.5rem;
+    }
+    .chat-markdown ol {
+      list-style: decimal;
+      padding-left: 1.5rem;
+    }
+    .chat-markdown table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    .chat-markdown table, .chat-markdown th, .chat-markdown td {
+      border: 1px solid white;
+    }
+    .chat-markdown th, .chat-markdown td {
+      padding: 0.5rem;
+      text-align: left;
+    }
+    .panel-lateral {
+      transition: width 0.3s ease;
+      overflow: hidden;
+    }
+    .panel-lateral.expandido {
+      width: 240px;
+    }
+    .panel-lateral.colapsado {
+      width: 48px;
     }
   </style>
 </head>
 <body class="bg-gradient-to-br from-black via-indigo-900 to-purple-900 text-white font-sans h-screen overflow-hidden">
   <div class="flex h-full">
-    <!-- Panel lateral -->
-    <div id="side-panel" class="bg-indigo-950 w-16 hover:w-64 transition-all duration-300 p-2 overflow-hidden">
-      <button onclick="crearNuevoChat()" class="text-white text-sm w-full text-left mb-2">+ Nuevo chat</button>
-      <div id="lista-chats" class="text-xs space-y-1"></div>
+    <!-- Panel Lateral -->
+    <div id="panel" class="panel-lateral expandido bg-purple-950 flex flex-col">
+      <button onclick="togglePanel()" class="text-white p-2 hover:bg-purple-800 text-left">
+        <span id="toggle-text">⬅️</span>
+      </button>
+      <button onclick="nuevoChat()" class="p-2 hover:bg-purple-800 text-left">+ Nuevo chat</button>
+      <div id="lista-chats" class="overflow-y-auto flex-1 p-2 text-sm"></div>
     </div>
 
-    <!-- Área de conversación -->
+    <!-- Área principal -->
     <div class="flex-1 flex flex-col">
-      <div class="flex items-center justify-between p-4 bg-indigo-800">
-        <h1 class="text-xl font-light tracking-wider">MIRA - Asistente Educativa</h1>
-        <img id="avatar-mira" src="avatar_mira.png" alt="MIRA" class="w-14 h-14 rounded-full shadow-lg"/>
+      <div class="flex justify-between items-center bg-purple-900 px-4 py-2">
+        <h1 class="text-xl font-bold">MIRA - Asistente Educativa</h1>
+        <img src="avatar_mira.png" id="avatar-mira" class="w-10 h-10 rounded-full transition-all duration-300" alt="Avatar MIRA">
       </div>
-      <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-2 text-sm"></div>
-      <div class="p-4 bg-indigo-950">
-        <input id="user-input" type="text" placeholder="Escribe tu mensaje..." class="w-full px-4 py-2 rounded text-black"/>
+      <div id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-4 text-base"></div>
+      <div class="p-4 bg-purple-900">
+        <input id="user-input" placeholder="Escribe aquí..." class="w-full rounded-md px-4 py-2 text-black focus:outline-none" />
       </div>
     </div>
   </div>
-  <script src="chat.js"></script>
 </body>
 </html>
