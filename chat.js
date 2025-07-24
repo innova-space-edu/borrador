@@ -45,7 +45,7 @@ areasBtn.onclick = () => {
 };
 
 // ========== CHAT FUNCIONES PRINCIPALES ========== //
-const API_KEY = "TU_API_KEY";
+const API_KEY = "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";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 let chatHistory = [];
@@ -101,11 +101,9 @@ function speak(markdown) {
   }
 }
 
-// Prompt mejorado: pide explicación ANTES de fórmula, fórmula en LaTeX, lista de variables SIN LaTeX
+// Prompt simple para máxima compatibilidad
 const SYSTEM_PROMPT = `
 Eres MIRA, una asistente virtual amigable y experta en todas las materias escolares. Responde siempre en español, de forma clara, útil y fácil de entender.
-
-Listo para responder.
 `;
 
 // Render mensaje inicial al cargar
@@ -148,9 +146,16 @@ sendBtn.onclick = async function() {
       })
     });
     const data = await resp.json();
+    console.log("Respuesta API:", data);
     // Quita el "pensando"
     chatContainer.lastChild?.remove();
-    let content = data.choices?.[0]?.message?.content || "No entendí la respuesta. ¿Puedes intentar de nuevo?";
+    // Chequear diferentes formatos de respuesta
+    let content = (
+      data.choices?.[0]?.message?.content ||
+      data.choices?.[0]?.text ||
+      data.choices?.[0]?.content ||
+      "No entendí la respuesta. ¿Puedes intentar de nuevo?"
+    );
     addMessage("assistant", content);
     chatHistory.push({role:"assistant",content});
   } catch (e) {
@@ -198,4 +203,3 @@ newChatBtn.onclick = () => {
 };
 
 renderSavedChats();
-
