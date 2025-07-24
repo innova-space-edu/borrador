@@ -12,178 +12,304 @@
       background: linear-gradient(135deg, #eceaff 0%, #e1d7fd 100%);
       min-height: 100vh;
       font-family: 'Segoe UI', Arial, sans-serif;
+      overflow-x: hidden;
     }
-    #main-container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 2.5rem 1rem 0 1rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
+    .floating-avatar {
+      position: fixed;
+      z-index: 1001;
+      top: 120px;
+      left: 48vw;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: #fff8;
+      box-shadow: 0 6px 32px #bbaaff90;
+      cursor: grab;
+      user-select: none;
+      transition: box-shadow 0.2s;
     }
-    #avatar-mira {
-      width: 98px;
-      height: 98px;
-      margin-bottom: 0.7rem;
-      margin-top: 1.3rem;
-      border-radius: 2.5rem;
-      box-shadow: 0 6px 32px #bbaaff80;
-      background: #f6f7ff;
-      display: block;
-    }
-    #avatar-mira.pulse {
+    .floating-avatar.pulse {
       animation: halo-glow 1.2s infinite alternate;
       filter: drop-shadow(0 0 24px #a855f7) brightness(1.15);
     }
     @keyframes halo-glow {
-      from { filter: drop-shadow(0 0 16px #4f46e5) brightness(1.13);}
-      to { filter: drop-shadow(0 0 40px #38bdf8) brightness(1.45);}
+      from { filter: drop-shadow(0 0 18px #7c3aed) brightness(1.11);}
+      to { filter: drop-shadow(0 0 44px #38bdf8) brightness(1.41);}
     }
-    .bubble-mira {
-      background: #23243a;
+    /* Panel lateral plegable */
+    #side-panel {
+      position: fixed;
+      top: 0; left: 0;
+      width: 270px;
+      height: 100vh;
+      background: #ebe6fa;
+      border-right: 2px solid #cbb9ff;
+      box-shadow: 0 0 20px #bbaaff21;
+      z-index: 1000;
+      padding: 1.5em 1.1em 1.1em 1.2em;
+      transform: translateX(0);
+      transition: transform 0.24s;
+    }
+    #side-panel.closed {
+      transform: translateX(-100%);
+    }
+    #side-toggle {
+      position: fixed;
+      top: 22px; left: 18px;
+      z-index: 1100;
+      background: #a88cf6;
       color: #fff;
-      margin: 0.7em 0 0.7em 0;
-      border-radius: 1.1em;
-      padding: 1.1em 1.5em 1.1em 1.1em;
-      max-width: 86%;
-      font-size: 1.1rem;
-      box-shadow: 0 2px 16px #beadff2c;
-      text-align: left;
-      white-space: pre-wrap;
-      overflow-x: auto;
-      word-break: break-word;
-      margin-left: 0.5em;
+      border: none;
+      border-radius: 0.6em;
+      width: 36px; height: 36px;
+      font-size: 1.8em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: left 0.2s;
     }
-    .bubble-user {
-      background: #e6dcfa;
-      color: #432d87;
-      border-radius: 1.1em;
-      padding: 1.1em 1.5em 1.1em 1.1em;
-      max-width: 80%;
-      margin: 0.6em 0 0.6em auto;
-      font-size: 1.1rem;
-      text-align: left;
-      box-shadow: 0 2px 12px #bbaaff18;
-      white-space: pre-wrap;
-      overflow-x: auto;
-      word-break: break-word;
+    #side-panel.closed ~ #side-toggle {
+      left: 18px;
+    }
+    /* Chatbox grande */
+    #main-section {
+      margin-left: 0;
+      transition: margin-left 0.24s;
+      padding-top: 40px;
+      width: 100vw;
+    }
+    @media (min-width: 700px) {
+      #main-section { margin-left: 270px; width: calc(100vw - 270px);}
+      #side-panel.closed ~ #main-section { margin-left: 0; width: 100vw;}
     }
     #chat-history {
-      background: #23243a;
-      border-radius: 1.5em;
-      padding: 2.1em 1.5em 2em 1.5em;
-      min-height: 320px;
-      max-height: 430px;
       width: 96vw;
-      max-width: 690px;
-      margin: 1.2em 0 0.5em 0;
+      max-width: 1100px;
+      min-height: 360px;
+      max-height: 68vh;
+      margin: 0 auto;
+      margin-top: 1.2em;
+      background: #262840;
+      border-radius: 1.5em;
+      padding: 2.2em 2em 2em 2em;
+      font-size: 1.16rem;
+      color: #f9f9fa;
       overflow-y: auto;
-      font-size: 1.13rem;
-      box-shadow: 0 6px 32px #bbaaff80;
+      box-shadow: 0 6px 42px #bbb3fa40;
     }
-    #input-area {
+    .bubble-mira {
+      margin: 0.9em 0 0.7em 0.1em;
+      padding: 0.6em 1em 0.6em 1.2em;
+      background: none;
+      color: #f9f9fa;
+      font-size: 1.13em;
+      border-left: 4px solid #a07fff5c;
+      border-radius: 0.6em;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: auto;
+      font-weight: 500;
+    }
+    .bubble-user {
+      margin: 0.7em 0 0.7em auto;
+      background: #efe2fe;
+      color: #452aa7;
+      border-radius: 0.9em;
+      padding: 0.6em 1em 0.6em 1.2em;
+      max-width: 70%;
+      font-size: 1.13em;
+      box-shadow: 0 2px 9px #c9bcfa19;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    /* Entrada de texto + volumen a la derecha */
+    #input-bar {
+      width: 96vw;
+      max-width: 1100px;
       display: flex;
-      width: 100%;
-      max-width: 690px;
       align-items: center;
-      margin: 1.2em 0 0.7em 0;
+      margin: 1.1em auto 0.6em auto;
+      gap: 1em;
     }
     #user-input {
       flex: 1;
-      padding: 1.1em;
-      border-radius: 0.9em;
-      font-size: 1.1em;
-      border: 1.7px solid #c1a3fa;
-      background: #f7f4fd;
-      color: #23243a;
-      margin-right: 1em;
-      box-shadow: 0 2px 9px #bbaaff13;
+      font-size: 1.13em;
+      border-radius: 0.8em;
+      border: 1.7px solid #d3b5ff;
+      background: #fcf7ff;
+      color: #262840;
+      padding: 1.1em 1em;
       outline: none;
+      box-shadow: 0 2px 8px #bbaaff13;
+      font-weight: 500;
     }
     #send-btn {
-      padding: 1.1em 2.1em;
-      font-size: 1.15em;
-      font-weight: 600;
-      border-radius: 0.9em;
+      font-size: 1.13em;
+      font-weight: 700;
+      border-radius: 0.8em;
       background: linear-gradient(90deg, #a07fff 30%, #ca86ff 100%);
       color: #fff;
       border: none;
-      cursor: pointer;
+      padding: 1em 2em;
       box-shadow: 0 2px 9px #bbaaff35;
+      cursor: pointer;
+      margin-right: 0.3em;
       transition: background 0.15s;
     }
-    #send-btn:hover {
-      background: linear-gradient(90deg, #b98fff 0%, #d6a4ff 100%);
-    }
-    #controls-bar {
-      width: 100%;
-      max-width: 690px;
-      display: flex;
-      align-items: center;
-      gap: 1.4em;
-      margin-bottom: 1.1em;
-      margin-top: 0.1em;
-      justify-content: flex-end;
-    }
+    #send-btn:hover { background: linear-gradient(90deg, #b98fff 0%, #d6a4ff 100%);}
     #mute-btn {
-      padding: 0.4em 0.7em;
-      background: #e5dbfb;
-      color: #512fb5;
-      border-radius: 0.7em;
-      font-size: 1.2em;
+      padding: 0.8em 0.85em;
+      margin-left: 0.3em;
+      background: #eee3ff;
+      color: #6341d9;
       border: none;
+      border-radius: 0.7em;
+      font-size: 1.3em;
       cursor: pointer;
-      margin-right: 1.1em;
       box-shadow: 0 2px 6px #bbaaff11;
       display: flex;
       align-items: center;
-      gap: 0.3em;
+      transition: background 0.15s;
     }
-    #volume-slider {
-      width: 85px;
-      accent-color: #a07fff;
-      margin-right: 1em;
+    #mute-btn.muted { color: #bba3ff; background: #ebdefe;}
+    /* Titular fijo */
+    #header-bar {
+      position: fixed;
+      top: 0; left: 0; width: 100vw;
+      background: #e8e1ffcc;
+      box-shadow: 0 1px 24px #a99cf821;
+      z-index: 1030;
+      display: flex;
+      align-items: center;
+      padding-left: 4em;
+      height: 65px;
     }
-    @media (max-width: 900px) {
-      #main-container { padding: 1.2rem 0.2rem;}
-      #chat-history, #input-area, #controls-bar { max-width: 98vw; }
+    #page-title {
+      font-size: 2.2em;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      color: #8450ff;
+      margin: 0 0 0 0.2em;
+      text-shadow: 0 3px 14px #bbaaff21;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      user-select: none;
     }
-    @media (max-width: 650px) {
-      #avatar-mira { width: 68px; height: 68px; }
-      #chat-history { padding: 1.1em 0.6em 1em 0.6em; }
-      #input-area { margin: 0.8em 0 0.4em 0; }
+    @media (max-width: 700px) {
+      #side-panel, #main-section { margin-left: 0 !important; }
+      #header-bar { padding-left: 1.3em;}
+      #chat-history, #input-bar { max-width: 99vw;}
     }
   </style>
 </head>
 <body>
-  <div id="main-container">
-    <!-- Avatar y título -->
-    <div style="display:flex; flex-direction:column; align-items:center;">
-      <img id="avatar-mira" src="avatar_mira.png" alt="Avatar MIRA" />
+  <!-- Panel lateral -->
+  <div id="side-panel" class="">
+    <div class="font-extrabold text-2xl pb-2 text-[#7f4ffe]">Innova Space<br>Education</div>
+    <div class="text-sm pb-3 text-[#726e8a]">Educación del futuro.<br>Conectando estudiantes con IA.</div>
+
+    <button onclick="toggleAreas()" class="w-full text-left font-bold text-lg text-[#4634b4] mt-4 mb-1 flex items-center select-none">
+      Áreas que responde MIRA
+      <span id="areas-arrow" class="ml-2 text-xl">&#9660;</span>
+    </button>
+    <ul id="areas-list" class="ml-1 mb-4">
+      <li>Matemáticas</li>
+      <li>Física</li>
+      <li>Química</li>
+      <li>Biología</li>
+      <li>Historia</li>
+      <li>Geografía</li>
+      <li>Lenguaje</li>
+      <li>Inglés</li>
+      <li>Artes Visuales</li>
+      <li>Música</li>
+      <li>Educación Física</li>
+      <li>Filosofía</li>
+      <li>Tecnología</li>
+      <li>Orientación</li>
+    </ul>
+    <div class="font-bold text-lg text-[#6c3dbe] mb-1 mt-5">¿Quiénes somos?</div>
+    <div class="text-sm mb-5 text-[#5b5799]">
+      Plataforma educativa que integra inteligencia artificial para apoyar el aprendizaje de los estudiantes.
     </div>
-    <h2 class="text-4xl font-bold mt-2 mb-3 text-center text-[#423ba0] select-none" style="letter-spacing:0.03em;">
-      Asistente IA - MIRA
-    </h2>
-
-    <!-- Chat history bubbles -->
-    <div id="chat-history" aria-live="polite"></div>
-
-    <!-- Input area -->
-    <form id="input-area" autocomplete="off" onsubmit="event.preventDefault(); sendMessage();">
-      <input type="text" id="user-input" placeholder="Escribe tu mensaje..." autocomplete="off" aria-label="Escribe tu mensaje"/>
-      <button id="send-btn" type="button">Enviar</button>
-    </form>
-
-    <!-- Barra de control volumen/mute -->
-    <div id="controls-bar">
-      <button id="mute-btn" title="Mutear/activar voz">
-        <span id="mute-icon">🔊</span>
-      </button>
-      <input id="volume-slider" type="range" min="0" max="100" value="100" title="Volumen" />
-    </div>
+    <div class="font-bold text-base text-[#7f4ffe] mb-1 mt-6">Chats guardados</div>
+    <ul id="chat-list" class="mb-2">
+      <li><a href="#" onclick="restoreChat(1)">Chat 1</a></li>
+      <li><a href="#" onclick="restoreChat(2)">Chat 2</a></li>
+    </ul>
+    <button onclick="newChat()" class="bg-[#b09cff] mt-2 px-4 py-2 rounded-lg text-white font-bold text-sm hover:bg-[#9476d1]">Nuevo chat</button>
+  </div>
+  <button id="side-toggle" onclick="toggleSidePanel()" title="Abrir/cerrar menú">&#9776;</button>
+  <!-- Header fijo -->
+  <div id="header-bar">
+    <span id="page-title">Innova Space Education</span>
   </div>
 
+  <!-- Main Chat -->
+  <div id="main-section">
+    <div style="margin-top: 4.3em;"></div>
+    <!-- Avatar flotante (arrastrable) -->
+    <img id="avatar-mira" class="floating-avatar" src="avatar_mira.png" alt="MIRA Avatar" />
+    <!-- Título principal -->
+    <h2 class="text-4xl font-bold mt-1 mb-3 text-center text-[#4634b4] select-none">Asistente IA - MIRA</h2>
+    <!-- Chat grande -->
+    <div id="chat-history" aria-live="polite"></div>
+    <!-- Barra de entrada -->
+    <div id="input-bar">
+      <input type="text" id="user-input" placeholder="Escribe tu mensaje..." autocomplete="off" aria-label="Escribe tu mensaje"/>
+      <button id="send-btn">Enviar</button>
+      <button id="mute-btn" title="Mutear/activar voz"><span id="mute-icon">🔊</span></button>
+    </div>
+  </div>
   <script src="chat.js"></script>
+  <script>
+    // Panel lateral plegable
+    function toggleSidePanel() {
+      const panel = document.getElementById("side-panel");
+      panel.classList.toggle("closed");
+    }
+    // Áreas desplegable
+    function toggleAreas() {
+      const list = document.getElementById("areas-list");
+      const arrow = document.getElementById("areas-arrow");
+      if (list.style.display === "none") {
+        list.style.display = "block";
+        arrow.innerHTML = "&#9660;";
+      } else {
+        list.style.display = "none";
+        arrow.innerHTML = "&#9654;";
+      }
+    }
+    // Inicializa áreas abiertas por defecto
+    document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("areas-list").style.display = "block";
+    });
+    // Avatar flotante drag & drop puro JS
+    (() => {
+      const avatar = document.getElementById("avatar-mira");
+      let isDragging = false, offsetX = 0, offsetY = 0;
+      avatar.addEventListener('mousedown', function (e) {
+        isDragging = true;
+        offsetX = e.clientX - avatar.getBoundingClientRect().left;
+        offsetY = e.clientY - avatar.getBoundingClientRect().top;
+        avatar.style.cursor = "grabbing";
+      });
+      document.addEventListener('mousemove', function (e) {
+        if (!isDragging) return;
+        let x = e.clientX - offsetX, y = e.clientY - offsetY;
+        // límites de ventana
+        x = Math.max(10, Math.min(window.innerWidth - avatar.offsetWidth - 10, x));
+        y = Math.max(70, Math.min(window.innerHeight - avatar.offsetHeight - 10, y));
+        avatar.style.left = x + "px";
+        avatar.style.top = y + "px";
+      });
+      document.addEventListener('mouseup', function () {
+        isDragging = false;
+        avatar.style.cursor = "grab";
+      });
+      // Prevent text select on drag
+      avatar.addEventListener('dragstart', e => e.preventDefault());
+    })();
+  </script>
 </body>
 </html>
