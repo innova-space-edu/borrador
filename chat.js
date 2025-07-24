@@ -23,27 +23,6 @@ document.addEventListener("mousemove", function(e){
   avatar.style.top = ny + "px";
 });
 
-// == SIDEBAR toggle
-const sidebar = document.getElementById("sidebar");
-const sidebarToggle = document.getElementById("sidebar-toggle");
-function closeSidebar() { document.body.classList.remove("sidebar-open"); document.body.classList.add("sidebar-closed"); }
-function openSidebar()  { document.body.classList.remove("sidebar-closed"); document.body.classList.add("sidebar-open"); }
-sidebarToggle.onclick = function() {
-  if (document.body.classList.contains("sidebar-open")) closeSidebar();
-  else openSidebar();
-};
-// Empieza cerrado
-closeSidebar();
-
-// Áreas desplegable
-const areasBtn = document.getElementById("areas-btn");
-const areasList = document.getElementById("areas-list");
-const areasArrow = document.getElementById("areas-arrow");
-areasBtn.onclick = () => {
-  areasList.classList.toggle("open");
-  areasArrow.textContent = areasList.classList.contains("open") ? "▲" : "▼";
-};
-
 // ========== CHAT FUNCIONES PRINCIPALES ========== //
 const API_KEY = "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";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
@@ -53,10 +32,16 @@ let voiceActive = true;
 
 // Volume/Mute control
 const volBtn = document.getElementById("volume-btn");
+const volIcon = document.getElementById("vol-icon");
+function updateVolumeBtn() {
+  volBtn.classList.toggle("active", voiceActive);
+  volIcon.textContent = voiceActive ? "🔊" : "🔇";
+}
 volBtn.onclick = function() {
   voiceActive = !voiceActive;
-  volBtn.classList.toggle("active", voiceActive);
+  updateVolumeBtn();
 };
+updateVolumeBtn();
 
 // Mensaje inicial
 const chatContainer = document.getElementById("chat-container");
@@ -101,9 +86,23 @@ function speak(markdown) {
   }
 }
 
-// Prompt simple para máxima compatibilidad
+// PROMPT ACTUALIZADO COMPLETO
 const SYSTEM_PROMPT = `
-Eres MIRA, una asistente virtual de inteligencia artificial creada por Innova Space y OpenAI. creada para apoyar a estudiantes y profesores en todas las materias escolares. Responde siempre en español, con explicaciones claras, ordenadas y fáciles de entender, adaptando el nivel de detalle según el usuario.
+Innova Space Education  
+Educación del futuro. Conectando estudiantes con IA.
+
+¿Quién es MIRA?  
+MIRA (Modular Intelligent Responsive Assistant), en español: Asistente Modular, Inteligente y Reactivo.  
+Creada por Innova Space con tecnología OpenAI.  
+Diseñada para acompañar, explicar y ayudar a estudiantes y docentes de forma interactiva y personalizada en todas las materias.  
+Su misión es facilitar el aprendizaje, responder dudas, explicar fórmulas y conceptos, y guiarte en tu avance académico, con explicaciones claras y amigables.
+
+¿Quiénes somos?  
+Plataforma educativa que integra inteligencia artificial para apoyar el aprendizaje de los estudiantes.
+
+---
+
+Eres MIRA, una asistente virtual de inteligencia artificial creada por Innova Space y OpenAI, diseñada para apoyar a estudiantes y profesores en todas las materias escolares. Responde siempre en español, con explicaciones claras, ordenadas y fáciles de entender, adaptando el nivel de detalle según el usuario.
 
 Cuando te pidan una **fórmula, ecuación, función matemática o científica**, sigue estos pasos:
 
@@ -119,7 +118,7 @@ La velocidad media es la variación de la posición dividida por la variación d
 
 La fórmula es:
 $$
-v_m = \frac{\Delta x}{\Delta t}
+v_m = \\frac{\\Delta x}{\\Delta t}
 $$
 Donde:
 - **vm** es la velocidad media
@@ -139,10 +138,7 @@ Donde:
 
 Recuerda: **No incluyas advertencias sobre limitaciones de IA** ni mensajes automáticos, a menos que te lo pidan.
 
----
-
 Responde siempre con amabilidad y usando buen ritmo, pausas, y frases bien puntuadas para facilitar la lectura en voz alta.
-
 `;
 
 // Render mensaje inicial al cargar
@@ -185,10 +181,8 @@ sendBtn.onclick = async function() {
       })
     });
     const data = await resp.json();
-    console.log("Respuesta API:", data);
     // Quita el "pensando"
     chatContainer.lastChild?.remove();
-    // Chequear diferentes formatos de respuesta
     let content = (
       data.choices?.[0]?.message?.content ||
       data.choices?.[0]?.text ||
