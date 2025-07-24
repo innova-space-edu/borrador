@@ -1,138 +1,103 @@
-const avatar = document.getElementById("avatar-mira");
-let dragging = false, offsetX = 0, offsetY = 0;
-
-avatar.addEventListener("mousedown", function(e) {
-  dragging = true;
-  const rect = avatar.getBoundingClientRect();
-  offsetX = rect.left - e.clientX;
-  offsetY = rect.top - e.clientY;
-  avatar.style.transition = "none";
-  document.body.style.userSelect = "none";
-});
-
-document.addEventListener("mouseup", () => {
-  dragging = false;
-  avatar.style.transition = "";
-  document.body.style.userSelect = "";
-});
-
-document.addEventListener("mousemove", function(e){
-  if (!dragging) return;
-  let nx = e.clientX + offsetX, ny = e.clientY + offsetY;
-  nx = Math.max(10, Math.min(window.innerWidth - avatar.offsetWidth - 8, nx));
-  ny = Math.max(10, Math.min(window.innerHeight - avatar.offsetHeight - 8, ny));
-  avatar.style.left = nx + "px";
-  avatar.style.top = ny + "px";
-});
-
-// Configuración general
-const API_KEY = "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";
-const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
-
-let chatHistory = [];
-let voiceActive = true;
-
-const volBtn = document.getElementById("volume-btn");
-const volIcon = document.getElementById("vol-icon");
-volBtn.onclick = () => {
-  voiceActive = !voiceActive;
-  volIcon.textContent = voiceActive ? "🔊" : "🔇";
-};
-
 const chatContainer = document.getElementById("chat-container");
-function addMessage(role, content) {
-  const div = document.createElement("div");
-  div.innerHTML = (role === "user"
-    ? `<strong style="color:#d8b4fe">Tú:</strong> ` + escapeHtml(content)
-    : `<strong style="color:#a5f3fc">MIRA:</strong> ` + renderMarkdown(content)
-  );
-  div.style.marginBottom = "1em";
-  chatContainer.appendChild(div);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-  if (role === "assistant" && voiceActive) speak(content);
-  if (window.MathJax) MathJax.typesetPromise();
-}
+const input = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+const avatar = document.getElementById("avatar");
+const typing = document.getElementById("typing-indicator");
+const API_KEY = "TU_API_KEY_GROQ";
+let chatHistory = JSON.parse(localStorage.getItem("miraChat") || "[]");
 
-function escapeHtml(text) {
-  return text.replace(/[&<>"']/g, m => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  })[m]);
-}
-function renderMarkdown(text) {
-  return marked.parse(text || "");
-}
+// === RENDER INICIAL ===
+window.addEventListener("DOMContentLoaded", () => {
+  chatHistory.forEach(msg => renderMessage(msg.role, msg.content));
+});
 
-function speak(markdown) {
-  let text = markdown
-    .replace(/\$\$[\s\S]*?\$\$/g, ' ')
-    .replace(/\$[^$]*\$/g, ' ')
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/([.,;:!?\n])/g, "$1 ")
-    .trim();
-  if (text && voiceActive) {
-    const msg = new SpeechSynthesisUtterance(text);
-    msg.lang = "es-ES";
-    msg.rate = 1.0;
-    msg.pitch = 1.04;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(msg);
+// === FUNCIONES BASE ===
+function renderMessage(role, content) {
+  const msg = document.createElement("div");
+  msg.className = `message ${role === "user" ? "user" : "bot"}`;
+  msg.innerHTML = marked.parse(content);
+  chatContainer.appendChild(msg);
+  chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: "smooth" });
+  MathJax.typesetPromise();
+  if (role === "assistant") {
+    speak(content);
+    avatar.classList.add("talking");
+    setTimeout(() => avatar.classList.remove("talking"), 1200);
   }
 }
 
-const SYSTEM_PROMPT = `
-Eres MIRA, una asistente virtual de inteligencia artificial creada por Innova Space y OpenAI. Diseñada para apoyar a estudiantes y profesores en todas las materias escolares. Responde siempre en español, de forma clara, amable y ordenada.
+function saveChat(role, content) {
+  chatHistory.push({ role, content });
+  localStorage.setItem("miraChat", JSON.stringify(chatHistory));
+}
 
-Cuando te pidan una fórmula o ecuación:
-1. Explica el concepto con palabras simples.
-2. Muestra la fórmula en LaTeX usando $ o $$.
-3. Explica las variables.
-4. Da un ejemplo si es posible.
-`;
+function speak(text) {
+  const cleaned = text.replace(/\$\$.*?\$\$/gs, "").replace(/\$.*?\$/g, "");
+  const msg = new SpeechSynthesisUtterance(cleaned);
+  msg.lang = "es-ES";
+  speechSynthesis.cancel();
+  speechSynthesis.speak(msg);
+}
 
-window.addEventListener("DOMContentLoaded", () => {
-  addMessage("assistant", "¡Hola! Soy MIRA. ¿En qué te puedo ayudar?");
+// === ENVÍO Y RESPUESTA ===
+sendBtn.onclick = () => handleSend();
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter") handleSend();
 });
 
-const sendBtn = document.getElementById("send-btn");
-const userInput = document.getElementById("user-input");
+function handleSend() {
+  const question = input.value.trim();
+  if (!question) return;
+  renderMessage("user", question);
+  saveChat("user", question);
+  input.value = "";
+  getResponse(question);
+}
 
-userInput.addEventListener("keydown", function(event) {
-  if (event.key === "Enter") sendBtn.click();
-});
-
-sendBtn.onclick = async function() {
-  const text = userInput.value.trim();
-  if (!text) return;
-  addMessage("user", text);
-  chatHistory.push({role:"user",content:text});
-  userInput.value = "";
-  addMessage("assistant", '<span style="color:#a2adf0;font-style:italic">MIRA está pensando...</span>');
-
+async function getResponse(prompt) {
+  typing.textContent = "MIRA está escribiendo...";
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${API_KEY}`,
+        Authorization: "Bearer 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",
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          ...chatHistory.slice(-5)
+          { role: "system", content: "Eres MIRA, una IA educativa amable y clara." },
+          ...chatHistory.slice(-10),
+          { role: "user", content: prompt }
         ],
-        temperature: 0.75
+        temperature: 0.7
       })
     });
 
-    const data = await response.json();
-    chatContainer.lastChild?.remove();
-    let content = data.choices?.[0]?.message?.content || "No entendí la respuesta.";
-    addMessage("assistant", content);
-    chatHistory.push({role:"assistant",content});
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content || "Lo siento, no entendí.";
+    renderMessage("assistant", content);
+    saveChat("assistant", content);
   } catch (e) {
-    chatContainer.lastChild?.remove();
-    addMessage("assistant", "Error de conexión o respuesta. Intenta de nuevo.");
+    renderMessage("assistant", "Error al conectar con la IA.");
+  } finally {
+    typing.textContent = "";
   }
-};
+}
+
+// === MOVER AVATAR ===
+avatar.addEventListener("mousedown", startDrag);
+function startDrag(e) {
+  const offsetX = e.clientX - avatar.offsetLeft;
+  const offsetY = e.clientY - avatar.offsetTop;
+  function drag(e) {
+    avatar.style.left = `${e.clientX - offsetX}px`;
+    avatar.style.top = `${e.clientY - offsetY}px`;
+  }
+  function stopDrag() {
+    document.removeEventListener("mousemove", drag);
+    document.removeEventListener("mouseup", stopDrag);
+  }
+  document.addEventListener("mousemove", drag);
+  document.addEventListener("mouseup", stopDrag);
+}
