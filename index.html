@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Innova Space Education</title>
+  <title>Innova Space Education - MIRA AI</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -11,11 +11,12 @@
     body {
       background: linear-gradient(135deg, #ede7ff 0%, #c8e5fa 100%);
       color: #23104a;
-      min-height: 100vh;
       font-family: 'Segoe UI', Arial, sans-serif;
       margin: 0;
       padding: 0;
     }
+
+    /* Sidebar */
     #sidebar {
       position: fixed;
       left: 0; top: 0; bottom: 0;
@@ -24,92 +25,25 @@
       border-right: 2px solid #a855f7;
       box-shadow: 3px 0 16px #a855f711;
       z-index: 40;
-      padding-top: 34px;
-      padding-bottom: 32px;
-      transform: translateX(-100%);
-      transition: transform 0.3s;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 30px 10px;
     }
-    body.sidebar-open #sidebar { transform: translateX(0); }
-    #sidebar-toggle {
-      position: fixed;
-      top: 22px; left: 18px;
-      z-index: 55;
-      background: #fff;
-      border-radius: 0.6em;
-      border: 2px solid #b993fe;
-      box-shadow: 0 2px 12px #b993fe22;
-      width: 45px; height: 45px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-    }
-    .hamburger { width: 30px; height: 20px; display: flex; flex-direction: column; justify-content: space-between;}
-    .hamburger span { display:block; height:4px; border-radius:3px; background:#a855f7; transition:.2s;}
+
     #sidebar img.sidebar-logo {
-      height: 66px; margin-bottom: 18px; display: block;
+      height: 66px; margin-bottom: 22px;
     }
-    .sidebar-title {
-      margin-top: 12px;
-      font-size: 1.3em;
-      font-weight: bold;
-      text-align: center;
-      color: #5d26c1;
-    }
-    .sidebar-subtitle {
-      margin-top: 6px;
-      font-size: 1.07em;
-      color: #4a2e9b;
-      text-align: center;
-      margin-bottom: 24px;
-    }
+
     .sidebar-section {
-      margin-top: 26px;
-      width: 92%;
-      color: #232146;
-      font-size: 1em;
-    }
-    /* Oculta panel lateral por defecto en mobile */
-    @media (max-width: 900px) {
-      #sidebar { width: 90vw; min-width: 0; }
-    }
-    /* --- MAIN --- */
-    .main-content {
-      margin-left: 0;
-      min-height: 100vh;
-      transition: margin-left 0.3s;
-      display: flex; flex-direction: column;
-      justify-content: flex-end;
-      align-items: stretch;
-    }
-    body.sidebar-open .main-content { margin-left: 250px; }
-    #chat-zone {
-      flex: 1 1 0%;
-      display: flex; flex-direction: column;
-      justify-content: flex-end;
-      align-items: center;
-      min-height: 82vh;
-      padding-top: 44px;
-      padding-bottom: 18vh;
-    }
-    #chat-container {
       width: 100%;
-      max-width: 730px;
-      min-height: 320px;
-      background: #23104ac8;
-      border-radius: 1.2em;
-      box-shadow: 0 6px 42px #856ab522;
-      padding: 2.5em 2em 2em 2em;
-      margin: 0 auto;
-      font-size: 1.18em;
-      color: #fff;
-      overflow-y: auto;
+      padding: 0 20px;
     }
-    /* --- AVATAR --- */
+
+    /* Avatar */
     #avatar-mira {
       position: fixed;
-      right: 34px; top: 42px;
+      right: 30px; top: 40px;
       z-index: 60;
       width: 110px; height: 110px;
       border-radius: 50%;
@@ -119,28 +53,40 @@
       transition: box-shadow .2s, transform .2s;
       background: #fff;
     }
-    #avatar-mira:active { box-shadow: 0 0 54px #fff, 0 2px 24px #c7aaff;}
-    /* --- INPUT + VOLUME --- */
+
+    #chat-container {
+      width: 100%;
+      max-width: 730px;
+      background: #23104ac8;
+      border-radius: 1.2em;
+      padding: 2.5em;
+      margin: 0 auto;
+      font-size: 1.18em;
+      color: #fff;
+      overflow-y: auto;
+      min-height: 300px;
+    }
+
     #chat-input-area {
-      position: fixed; bottom: 0; left: 0; right: 0;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
       z-index: 30;
       background: linear-gradient(0deg,#ede7ff 65%,transparent 100%);
       padding: 18px 0 14px 0;
       display: flex; justify-content: center; align-items: end; gap: 10px;
-      width: 100vw;
     }
+
     #user-input {
-      width: 50vw; max-width: 550px; min-width: 170px;
+      width: 50vw; max-width: 550px;
       font-size: 1.18em;
       border-radius: 0.6em;
       border: 2px solid #b993fe;
       padding: 0.88em 1.4em;
       background: #fff;
       color: #23104a;
-      margin-right: 0.5em;
-      outline: none;
       box-shadow: 0 2px 9px #b993fe22;
     }
+
     #send-btn {
       background: linear-gradient(90deg, #a855f7 60%, #40c9ff 100%);
       border: none;
@@ -150,11 +96,8 @@
       padding: 0.84em 2.2em;
       cursor: pointer;
       font-weight: bold;
-      transition: background .19s;
-      margin-right: 0.5em;
-      box-shadow: 0 2px 9px #b993fe22;
     }
-    #send-btn:hover { background: linear-gradient(90deg, #40c9ff 10%, #a855f7 95%);}
+
     #volume-btn {
       background: #fff;
       border: 2px solid #b993fe;
@@ -163,73 +106,17 @@
       width: 42px; height: 42px;
       font-size: 1.38em;
       cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: background .15s, color .15s;
-      margin-left: 7px;
-      margin-bottom: 2px;
-    }
-    #volume-btn.active { background: #a855f7; color: #fff;}
-    /* Chat markdown tabla */
-    .chat-markdown table { border-collapse: collapse; width: 100%; background: #3d266a; color: #fff;}
-    .chat-markdown th, .chat-markdown td { border: 1px solid #7f5af0; padding: 7px 11px;}
-    .chat-markdown th { background: #4f378b; }
-    mjx-container[jax="CHTML"] {
-      font-size: 1.22em;
-      background: transparent !important;
-      padding: 0.1em 0.1em;
-      margin: 0.2em 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
-<body class="sidebar-closed">
+<body>
 
-  <!-- Botón sidebar hamburguesa -->
-  <div id="sidebar-toggle" title="Abrir menú">
-    <div class="hamburger">
-      <span></span><span></span><span></span>
-    </div>
-  </div>
-
-  <!-- Sidebar -->
+  <!-- Sidebar simple -->
   <aside id="sidebar">
     <img src="logo.png" alt="Logo Innova Space" class="sidebar-logo">
-    <div class="sidebar-title">Innova Space Education</div>
-    <div class="sidebar-subtitle">Educación del futuro. Conectando estudiantes con IA.</div>
-
-    <div class="sidebar-section" style="margin-top:30px;">
-      <b>¿Quién es MIRA?</b><br>
-      MIRA (Modular Intelligent Responsive Assistant), en español:<br>
-      Asistente Modular, Inteligente y Reactivo.<br>
-      Creada por <b>Innova Space</b> con tecnología <b>OpenAI</b>.<br>
-      Diseñada para acompañar, explicar y ayudar a estudiantes y docentes de forma interactiva y personalizada en todas las materias.<br>
-      Su misión es facilitar el aprendizaje, responder dudas, explicar fórmulas y conceptos, y guiarte en tu avance académico, con explicaciones claras y amigables.
-    </div>
-    <div class="sidebar-section">
-      <b>¿Quiénes somos?</b><br>
-      Plataforma educativa que integra inteligencia artificial para apoyar el aprendizaje de los estudiantes.
-    </div>
-
-    <div class="sidebar-section">
-      <button id="areas-btn" class="bg-purple-700 px-3 py-2 rounded-lg text-white mt-4 w-full flex items-center justify-between" style="font-weight:600;font-size:1.04em;">
-        Áreas que responde MIRA <span id="areas-arrow">▼</span>
-      </button>
-      <ul id="areas-list" class="hidden mt-2 mb-3" style="list-style: disc inside; padding-left:1.1em;">
-        <li>📐 Matemáticas</li>
-        <li>🧲 Física</li>
-        <li>⚗️ Química</li>
-        <li>🧬 Biología</li>
-        <li>🌎 Historia</li>
-        <li>🗺️ Geografía</li>
-        <li>📚 Lenguaje</li>
-        <li>🗣️ Inglés</li>
-        <li>🎨 Artes Visuales</li>
-        <li>🎼 Música</li>
-        <li>🏃 Educación Física</li>
-        <li>💭 Filosofía</li>
-        <li>💻 Tecnología</li>
-        <li>🤝 Orientación</li>
-      </ul>
-    </div>
     <div class="sidebar-section">
       <b>Chats guardados</b>
       <ul id="saved-chats" style="margin-top:7px;margin-bottom:5px;"></ul>
@@ -237,49 +124,23 @@
     </div>
   </aside>
 
-  <!-- AVATAR flotante -->
+  <!-- Avatar flotante -->
   <img id="avatar-mira" src="avatar_mira.svg" alt="Avatar MIRA" draggable="false">
 
-  <!-- Main chat zone -->
-  <div class="main-content">
-    <div id="chat-zone">
-      <div id="chat-container" class="chat-markdown"></div>
-    </div>
+  <!-- Chat principal -->
+  <div id="chat-zone" style="padding: 60px 20px 120px;">
+    <div id="chat-container" class="chat-markdown"></div>
   </div>
 
-  <!-- Input y volumen -->
+  <!-- Área de input -->
   <div id="chat-input-area">
     <input id="user-input" type="text" placeholder="Escribe tu mensaje..." autocomplete="off" />
     <button id="send-btn">Enviar</button>
     <button id="volume-btn" title="Voz activada/desactivada"><span id="vol-icon">🔊</span></button>
   </div>
 
+  <!-- Script principal -->
   <script src="chat.js"></script>
-  <script>
-    // Sidebar toggle
-    const sidebar = document.getElementById("sidebar");
-    const sidebarToggle = document.getElementById("sidebar-toggle");
-    function closeSidebar() { document.body.classList.remove("sidebar-open"); document.body.classList.add("sidebar-closed"); }
-    function openSidebar()  { document.body.classList.remove("sidebar-closed"); document.body.classList.add("sidebar-open"); }
-    sidebarToggle.onclick = function() {
-      if (document.body.classList.contains("sidebar-open")) closeSidebar();
-      else openSidebar();
-    };
-    closeSidebar();
 
-    // Áreas despliegue
-    const areasBtn = document.getElementById("areas-btn");
-    const areasList = document.getElementById("areas-list");
-    const areasArrow = document.getElementById("areas-arrow");
-    areasBtn.onclick = () => {
-      if (areasList.classList.contains("hidden")) {
-        areasList.classList.remove("hidden");
-        areasArrow.textContent = "▲";
-      } else {
-        areasList.classList.add("hidden");
-        areasArrow.textContent = "▼";
-      }
-    };
-  </script>
 </body>
 </html>
