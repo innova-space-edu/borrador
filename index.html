@@ -4,319 +4,175 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Innova Space Education</title>
+  <link rel="icon" href="favicon.ico">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:700,400&display=swap"/>
   <style>
     body {
-      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(135deg, #ece6fb 0%, #e2d8ff 100%);
-      min-height: 100vh;
-      overflow-x: hidden;
+      background: linear-gradient(135deg, #e2d6fb 0%, #e7e6fa 100%);
     }
-    .sidebar {
+    #side-panel {
+      transition: left 0.3s;
+      z-index: 40;
+    }
+    #side-panel.closed {
+      left: -260px;
+    }
+    #side-panel.open {
+      left: 0;
+    }
+    #panel-toggle {
       position: fixed;
-      top: 0; left: 0;
-      width: 300px;
-      height: 100%;
-      background: #e3d6ff;
-      box-shadow: 4px 0 18px #8d7bbe21;
+      top: 18px;
+      left: 18px;
       z-index: 50;
-      transition: transform .35s cubic-bezier(.7,0,.4,1);
-      transform: translateX(-102%);
-      border-right: 2px solid #c2b1fa;
-      padding: 1.8rem 1.2rem 1rem 2rem;
-    }
-    .sidebar.open { transform: translateX(0); }
-    .sidebar h1 { color: #8851f4; font-size: 2rem; font-weight: 800; letter-spacing: .02em;}
-    .sidebar .subtitle { font-size: 1.08rem; color: #463679; margin-top: .3em;}
-    .sidebar-section { margin-top: 1.7rem;}
-    .sidebar-section h2 {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #6237c7;
-      margin-bottom: .8em;
-      display: flex; align-items: center; gap: .3em;
+      width: 38px;
+      height: 38px;
+      background: none;
+      border: none;
       cursor: pointer;
-      user-select: none;
     }
-    .sidebar-list {
-      margin-left: .8em;
-      margin-bottom: 1.5em;
-      font-size: 1rem;
-      color: #333;
-      display: none;
+    /* Avatar flotante y grande */
+    #avatar-float {
+      position: fixed;
+      top: 48px;
+      right: 52px;
+      z-index: 45;
+      width: 124px;
+      height: 124px;
+      cursor: grab;
+      filter: drop-shadow(0 0 26px #b698ff88);
+      transition: filter .2s;
     }
-    .sidebar-list.open { display: block; }
-    .sidebar .chats { margin-top: 1.4em;}
-    .sidebar .chats li {margin-bottom: 0.2em;}
-    .sidebar .chats a {color:#6237c7;text-decoration:none;}
-    .sidebar .chats a:hover {text-decoration: underline;}
-    .sidebar .btn {margin-top:1em;background:#a678f3;color:#fff;padding:0.42em 1.1em;border-radius:.45em;font-weight:700;}
-    .sidebar .btn:active {background:#8851f4;}
-    /* Hamburger button */
-    .hamburger {
-      position: absolute; top: 1.4rem; left: 1.3rem; z-index: 100;
-      width: 2.4rem; height: 2.4rem; background: none; border: none;
+    #avatar-float:active {
+      cursor: grabbing;
+      filter: drop-shadow(0 0 50px #8eefffcc);
+    }
+    @media (max-width:800px) {
+      #avatar-float { top: 18px; right: 16px; width: 75px; height:75px;}
+      #side-panel {width: 220px;}
+    }
+    #chat-box {
+      font-size: 1.17em;
+      background: #292c38;
+      color: #f8f8ff;
+      border-radius: 2.2rem;
+      min-height: 300px;
+      max-height: 540px;
+      overflow-y: auto;
+      box-shadow: 0 4px 22px #ad9ae940;
+      padding: 2.3rem 2.1rem 1.7rem 2.1rem;
+      margin-bottom: 0.9rem;
+      margin-top: 1.4rem;
+      width: 92vw;
+      max-width: 1100px;
+      min-width: 350px;
+      transition: box-shadow .15s;
+    }
+    @media (max-width: 680px){
+      #chat-box { font-size:1em; padding:1.2rem; }
+    }
+    .msg-ai {
+      margin-bottom: 1.45em;
+      padding-bottom: 0.8em;
+      border-bottom: 1px solid #473fa733;
+    }
+    .msg-user {
+      margin-bottom: 1em;
+      text-align: right;
+      color: #b28cff;
+    }
+    #volume-btn {
+      background: #e8d5ff;
+      color: #8d53ff;
+      border-radius: 1.2em;
+      font-size: 1.5em;
+      margin-left: 0.6em;
+      width: 54px; height: 54px;
+      box-shadow: 0 1px 8px #aaa2;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       transition: background .15s;
     }
-    .hamburger:hover { background: #d6c6fa; border-radius: 50%; }
-    .hamburger span, .hamburger span:before, .hamburger span:after {
-      display: block; background: #8851f4; height: 4px; width: 32px; border-radius: 4px;
-      position: absolute; content: "";
-      transition: all .3s cubic-bezier(.7,0,.4,1);
-    }
-    .hamburger span { position: relative;}
-    .hamburger span:before { top: -10px; }
-    .hamburger span:after { top: 10px; }
-    /* --- main panel --- */
-    .main-panel {
-      min-height: 100vh; min-width: 100vw;
-      display: flex; flex-direction: column; align-items: center;
-      padding-top: 0.3em;
-      transition: filter .3s;
-    }
-    .title-main {
-      margin-top: 1.4em; font-size: 2.5rem; font-weight: 800; color: #4636a0;
-      text-align: center; letter-spacing: 0.01em;
-    }
-    /* Avatar flotante */
-    #avatar-mira {
-      position: fixed;
-      right: 4vw; top: 4.5vh;
-      width: 110px; height: 110px;
-      border-radius: 100%;
-      background: #fff;
-      box-shadow: 0 0 44px #c2b1fa88, 0 2px 16px #d7ccff;
-      z-index: 101;
-      cursor: move;
-      transition: filter .3s, opacity .3s, box-shadow .3s;
-      user-select: none;
-    }
-    #avatar-mira img { width: 100%; height: 100%; object-fit: contain;}
-    #avatar-mira-label {
-      position: absolute; left: 50%; transform: translateX(-50%);
-      top: 84%; color: #6237c7; font-weight: 700; font-size: 1.06rem;
-      pointer-events: none;
-      text-shadow: 0 2px 10px #f4ecff60;
-    }
-    /* Área de respuesta grande */
-    #response-box {
-      width: min(80vw, 1100px);
-      min-height: 400px;
-      max-height: 62vh;
-      background: #262b3c;
-      color: #fff;
-      border-radius: 2em;
-      box-shadow: 0 6px 44px #7d65ba28, 0 2px 8px #6b509e1a;
-      margin-top: 2.3em;
-      margin-bottom: 2.2em;
-      padding: 2.3em 2.7em 2.3em 2.2em;
-      font-size: 1.23rem;
-      overflow-y: auto;
-      font-family: 'Montserrat', Arial, sans-serif;
-    }
-    #response-box strong { color: #ffe46b;}
-    #response-box table { background: #232542;}
-    #response-box th { background: #6336b6; color:#fff; }
-    /* Barra input */
-    .input-row {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      margin-bottom: 2.2em;
-    }
-    #user-input {
-      font-size: 1.18rem;
-      border-radius: 1.2em;
-      border: none;
-      outline: none;
-      padding: 1.15em 1.6em;
-      background: #eceaf9;
-      color: #333;
-      width: min(70vw, 820px);
-      margin-right: 1.2em;
-      box-shadow: 0 2px 12px #b1a7cf44;
-      font-family: 'Montserrat', Arial, sans-serif;
-    }
-    #user-input::placeholder { color: #b7b2cb;}
-    #send-btn {
-      background: #a678f3;
-      color: #fff;
-      font-weight: 800;
-      font-size: 1.18rem;
-      border-radius: 1em;
-      padding: 1em 2.2em;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 1px 6px #a678f3b5;
-      transition: background .2s;
-    }
-    #send-btn:hover { background: #8851f4;}
-    /* Botón volumen */
-    #mute-btn {
-      background: #ede5ff;
-      border: none;
-      border-radius: 1.4em;
-      margin-left: 1em;
-      padding: .6em 1em .6em .95em;
-      cursor: pointer;
-      font-size: 1.18rem;
-      box-shadow: 0 1px 6px #a678f3b5;
-      color: #4636a0;
-      display: flex; align-items: center;
-    }
-    #mute-btn svg {margin-right: .18em;}
-    #mute-btn.muted { color: #b1adc4; background: #eceaf9;}
-    /* Responsive tweaks */
-    @media (max-width:900px){
-      #response-box {width:98vw; padding:1em 0.8em;}
-      #user-input {width:85vw; font-size:1em;}
-      #avatar-mira { width:66px; height:66px; top:1.3vh; right:2vw;}
-      .sidebar { width:78vw;}
-    }
-    @media (max-width:600px){
-      #response-box {padding:0.6em 0.2em;}
-      #user-input { font-size:0.95em;}
-      .main-panel {padding-top:0.1em;}
-      #avatar-mira { width:48px; height:48px;}
-    }
+    #volume-btn.muted { color: #ddd; background:#e8d5ff88; }
+    /* Lateral */
+    #side-panel { background: #efe8ff; width: 260px; position:fixed; top:0; bottom:0; left:0; }
+    #side-panel h1 { font-size:2em; font-weight:800; letter-spacing:0.01em;}
+    .side-title { color:#7b47c7; }
+    .side-sub { color:#322262; font-size:1.1em; }
+    .side-section {margin-bottom:1.7em;}
+    .side-link {color:#5737a4;}
+    .side-link:hover {text-decoration: underline;}
+    .dropdown-btn {cursor:pointer; font-weight:700;}
+    .dropdown-content { display:none; margin-left: 0.7em; }
+    .dropdown.open .dropdown-content { display:block; }
   </style>
 </head>
-<body>
-  <!-- Panel lateral plegable -->
-  <button class="hamburger" id="hamburger-btn" aria-label="Abrir menú lateral">
-    <span></span>
+<body class="relative min-h-screen pb-12 select-none">
+  <!-- Panel lateral -->
+  <button id="panel-toggle" aria-label="Abrir menú" class="text-purple-500">
+    <svg width="32" height="32" viewBox="0 0 22 22"><rect y="4" width="22" height="3" rx="1.4" fill="#b598ff"/><rect y="9" width="22" height="3" rx="1.4" fill="#a68cff"/><rect y="14" width="22" height="3" rx="1.4" fill="#9174e7"/></svg>
   </button>
-  <nav class="sidebar" id="sidebar">
-    <h1>Innova Space<br>Education</h1>
-    <div class="subtitle">Educación del futuro.<br>Conectando estudiantes con IA.</div>
-
-    <div class="sidebar-section">
-      <h2 id="areas-toggle">
-        Áreas que responde MIRA
-        <span id="areas-caret">▼</span>
-      </h2>
-      <ul id="areas-list" class="sidebar-list">
-        <li>Matemáticas</li>
-        <li>Física</li>
-        <li>Química</li>
-        <li>Biología</li>
-        <li>Historia</li>
-        <li>Geografía</li>
-        <li>Lenguaje</li>
-        <li>Inglés</li>
-        <li>Artes Visuales</li>
-        <li>Música</li>
-        <li>Educación Física</li>
-        <li>Filosofía</li>
-        <li>Tecnología</li>
-        <li>Orientación</li>
-      </ul>
-    </div>
-    <div class="sidebar-section">
-      <h2>¿Quiénes somos?</h2>
-      <div class="sidebar-list open" style="display:block;">
-        Plataforma educativa que integra inteligencia artificial para apoyar el aprendizaje de los estudiantes.
+  <aside id="side-panel" class="closed shadow-2xl flex flex-col px-7 py-8 h-full">
+    <h1 class="side-title">Innova Space<br>Education</h1>
+    <div class="side-sub mb-6">Educación del futuro.<br>Conectando estudiantes con IA.</div>
+    <div class="side-section">
+      <div class="dropdown" id="areas-dropdown">
+        <span class="dropdown-btn text-[1.18em] text-[#613fc7]">Áreas que responde MIRA
+          <svg class="inline-block ml-1" width="18" height="18" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5" stroke="#6547b5" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </span>
+        <ul class="dropdown-content mt-1 text-[1em]">
+          <li>Matemáticas</li><li>Física</li><li>Química</li><li>Biología</li>
+          <li>Historia</li><li>Geografía</li><li>Lenguaje</li><li>Inglés</li>
+          <li>Artes Visuales</li><li>Música</li><li>Educación Física</li><li>Filosofía</li><li>Tecnología</li><li>Orientación</li>
+        </ul>
       </div>
     </div>
-    <div class="sidebar-section">
-      <h2>Chats guardados</h2>
-      <ul class="chats" id="chat-list"></ul>
-      <button class="btn" onclick="newChat()">Nuevo chat</button>
+    <div class="side-section">
+      <div class="text-[1.18em] font-bold mb-1 text-[#7046c5]">¿Quiénes somos?</div>
+      <div class="text-[#413b57] text-[1em]">Plataforma educativa que integra inteligencia artificial para apoyar el aprendizaje de los estudiantes.</div>
     </div>
-  </nav>
+    <div class="side-section">
+      <div class="font-bold text-[#8f7cf3] mb-1">Chats guardados</div>
+      <ul id="saved-chats"></ul>
+      <button id="new-chat-btn" class="mt-3 bg-purple-400 hover:bg-purple-500 text-white py-1.5 px-5 rounded-md shadow">Nuevo chat</button>
+    </div>
+  </aside>
 
-  <div class="main-panel">
-    <div class="title-main">Asistente IA - MIRA</div>
-    <!-- Avatar flotante -->
-    <div id="avatar-mira">
-      <img src="avatar_mira.png" alt="Avatar MIRA"/>
-      <div id="avatar-mira-label">MIRA<br><span style="font-weight:400;font-size:.98em;">Avatar</span></div>
-    </div>
-    <!-- Área de respuestas -->
-    <div id="response-box" class="chat-markdown">
-      <strong>MIRA:</strong> ¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?
-    </div>
-    <!-- Input de usuario -->
-    <form class="input-row" onsubmit="sendMessage();return false;">
-      <input type="text" id="user-input" placeholder="Escribe tu mensaje..." autocomplete="off" aria-label="Escribe tu mensaje"/>
-      <button id="send-btn" type="submit">Enviar</button>
-      <button id="mute-btn" type="button" aria-label="Mutear/activar voz"><svg height="24" width="24" viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5l-5 5H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03zm2.5 0c0 3.31-2.69 6-6 6v2c4.42 0 8-3.58 8-8h-2z"></path></svg></button>
-    </form>
+  <!-- Avatar flotante -->
+  <div id="avatar-float" draggable="true">
+    <object id="avatar-mira" type="image/svg+xml" data="avatar_mira.svg" width="100%" height="100%" aria-label="MIRA"></object>
   </div>
 
+  <!-- Título siempre arriba -->
+  <div class="w-full text-center pt-8 pb-3">
+    <h2 class="text-4xl font-extrabold text-[#5546b3] tracking-wide select-none" style="font-family:'Segoe UI',sans-serif;letter-spacing:0.01em;">Asistente IA - MIRA</h2>
+  </div>
+
+  <!-- Cuadro de respuesta -->
+  <main class="w-full flex flex-col items-center">
+    <section id="chat-box" class="mt-2"></section>
+
+    <!-- Input y volumen -->
+    <div class="flex w-full justify-center items-center gap-2 pb-6 mt-2">
+      <input
+        id="user-input"
+        aria-label="Escribe tu mensaje"
+        type="text"
+        placeholder="Escribe tu mensaje…"
+        class="flex-1 max-w-3xl text-lg px-5 py-3 rounded-2xl bg-[#efebf8] text-[#222345] border-2 border-[#cec6e4] shadow"
+        autocomplete="off"
+        onkeydown="if(event.key==='Enter'){sendMessage();return false;}"
+        style="min-width: 270px;"
+      >
+      <button onclick="sendMessage()" class="bg-purple-500 hover:bg-purple-600 text-white font-bold px-8 py-3 rounded-xl text-lg shadow" tabindex="0">
+        Enviar
+      </button>
+      <button id="volume-btn" title="Silenciar/activar voz"><span id="volume-icon">🔊</span></button>
+    </div>
+  </main>
+
   <script src="chat.js"></script>
-  <script>
-    // Sidebar toggle
-    const sidebar = document.getElementById('sidebar');
-    const hamburger = document.getElementById('hamburger-btn');
-    let sidebarOpen = false;
-    function closeSidebar() {
-      sidebar.classList.remove('open');
-      sidebarOpen = false;
-    }
-    function openSidebar() {
-      sidebar.classList.add('open');
-      sidebarOpen = true;
-    }
-    hamburger.addEventListener('click', () => {
-      if (sidebarOpen) closeSidebar();
-      else openSidebar();
-    });
-    // Comienza cerrado siempre
-    closeSidebar();
-    // Áreas toggle
-    document.getElementById('areas-toggle').onclick = function() {
-      const list = document.getElementById('areas-list');
-      if (list.classList.contains('open')) {
-        list.classList.remove('open');
-        list.style.display = 'none';
-        document.getElementById('areas-caret').textContent = "▼";
-      } else {
-        list.classList.add('open');
-        list.style.display = 'block';
-        document.getElementById('areas-caret').textContent = "▲";
-      }
-    };
-    // Avatar flotante drag & drop
-    (function() {
-      const avatar = document.getElementById('avatar-mira');
-      let dragging = false, offsetX = 0, offsetY = 0;
-      avatar.addEventListener('mousedown', function(e) {
-        dragging = true;
-        offsetX = e.clientX - avatar.getBoundingClientRect().left;
-        offsetY = e.clientY - avatar.getBoundingClientRect().top;
-        avatar.style.transition = "none";
-        document.body.style.userSelect = "none";
-      });
-      document.addEventListener('mousemove', function(e) {
-        if (!dragging) return;
-        avatar.style.left = (e.clientX - offsetX) + "px";
-        avatar.style.top = (e.clientY - offsetY) + "px";
-        avatar.style.right = "auto";
-        avatar.style.bottom = "auto";
-      });
-      document.addEventListener('mouseup', function() {
-        if (dragging) {
-          dragging = false;
-          avatar.style.transition = "";
-          document.body.style.userSelect = "";
-        }
-      });
-      // Responsive: vuelve a la posición default si la ventana cambia
-      window.addEventListener('resize', () => {
-        avatar.style.left = "";
-        avatar.style.top = "";
-        avatar.style.right = "";
-        avatar.style.bottom = "";
-      });
-    })();
-  </script>
 </body>
 </html>
