@@ -1,25 +1,27 @@
 const API_KEY = "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";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
-// Prompt claro, positivo, didáctico
+// Prompt didáctico y positivo, sigue el hilo, explica antes de mostrar fórmulas.
 const SYSTEM_PROMPT = `
 Eres MIRA, una asistente virtual educativa creada por Innova Space y OpenAI.
 
-Responde siempre de forma clara, natural y ordenada, como ChatGPT. Utiliza títulos, listas, tablas y explicaciones sencillas.
+Responde siempre de forma clara, amable y estructurada, como ChatGPT. Utiliza títulos, listas, tablas y explicaciones sencillas.
 
 Cuando te pidan una fórmula, ecuación o función:
 - Explica primero con una frase sencilla y clara lo que representa esa fórmula.
 - Después, muestra la fórmula escrita en LaTeX para que se vea ordenada y bonita.
 
-Al explicar el significado de cada variable, escribe el nombre y su significado en texto simple, así el usuario lo puede leer y escuchar fácilmente (ejemplo: v_m es la velocidad media).
+Cuando expliques el significado de cada variable, escríbelo en texto simple, para que el usuario pueda leerlo y escucharlo fácilmente (ejemplo: v_m es la velocidad media).
 
 Haz las explicaciones lo más comprensibles y didácticas posible, como para estudiantes de secundaria.
-Corrige errores ortográficos automáticamente. Si la pregunta es ambigua, interpreta o pide aclaración.
-Mantén el hilo de la conversación y responde a preguntas de seguimiento (“otro ejemplo”, “explícalo de nuevo”, etc.) teniendo en cuenta el contexto anterior.
+Corrige automáticamente errores ortográficos o palabras mal escritas. Si la pregunta es ambigua, interpreta lo más probable o pide aclaración, pero siempre intenta ayudar.
 
-Responde siempre en español, a menos que el usuario indique otro idioma.
+Mantén el hilo de la conversación: responde a preguntas de seguimiento (“otro ejemplo”, “explícalo de nuevo”, “hazlo más fácil”, etc.) usando el contexto anterior.
+
+Responde siempre en español, a menos que el usuario pida otro idioma.
 `;
 
+// Maneja la animación del avatar
 function setAvatarTalking(isTalking) {
   const avatar = document.getElementById("avatar-mira");
   if (!avatar) return;
@@ -27,7 +29,7 @@ function setAvatarTalking(isTalking) {
   else avatar.classList.remove("pulse");
 }
 
-// Enter para enviar
+// Permite enviar con Enter
 document.getElementById("user-input").addEventListener("keydown", function(event) {
   if (event.key === "Enter") {
     event.preventDefault();
@@ -35,7 +37,7 @@ document.getElementById("user-input").addEventListener("keydown", function(event
   }
 });
 
-// Indicador de carga
+// Indicador "pensando"
 function showThinking() {
   const chatBox = document.getElementById("chat-box");
   const thinking = document.createElement("div");
@@ -46,7 +48,7 @@ function showThinking() {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Voz: solo lee líneas normales (no fórmulas), agrega pausas en puntos y comas
+// Lee solo explicaciones (omite líneas con fórmulas o LaTeX)
 function plainTextForVoice(markdown) {
   let text = markdown
     .split('\n')
@@ -100,11 +102,12 @@ function escapeHtml(text) {
   });
 }
 
+// Mantén el historial para memoria de contexto (¡importante!)
 const chatHistory = [
   { role: "system", content: SYSTEM_PROMPT }
 ];
 
-// Saludo inicial (voz)
+// Mensaje de bienvenida hablado (solo texto, sin "MIRA:")
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     speak("¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?");
@@ -124,9 +127,9 @@ async function sendMessage() {
 
   chatHistory.push({ role: "user", content: userMessage });
 
-  // Mantén solo los últimos 10 mensajes (ajusta si quieres más memoria)
-  if (chatHistory.length > 11) {
-    chatHistory.splice(1, chatHistory.length - 10);
+  // Solo últimos 12 mensajes para no perder contexto (ajusta si deseas)
+  if (chatHistory.length > 13) {
+    chatHistory.splice(1, chatHistory.length - 12);
   }
 
   try {
@@ -146,6 +149,7 @@ async function sendMessage() {
     const data = await response.json();
     let aiReply = data.choices?.[0]?.message?.content || "";
 
+    // Respuestas para "quién eres"/presentación
     if (
       !aiReply ||
       aiReply.toLowerCase().includes("no se pudo") ||
