@@ -1,7 +1,7 @@
 const API_KEY = "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";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
-// Prompt positivo y didáctico
+// Prompt claro, positivo, didáctico
 const SYSTEM_PROMPT = `
 Eres MIRA, una asistente virtual educativa creada por Innova Space y OpenAI.
 
@@ -20,15 +20,11 @@ Mantén el hilo de la conversación y responde a preguntas de seguimiento (“ot
 Responde siempre en español, a menos que el usuario indique otro idioma.
 `;
 
-// Halo animado solo cuando habla
 function setAvatarTalking(isTalking) {
   const avatar = document.getElementById("avatar-mira");
   if (!avatar) return;
-  if (isTalking) {
-    avatar.classList.add("pulse");
-  } else {
-    avatar.classList.remove("pulse");
-  }
+  if (isTalking) avatar.classList.add("pulse");
+  else avatar.classList.remove("pulse");
 }
 
 // Enter para enviar
@@ -44,45 +40,40 @@ function showThinking() {
   const chatBox = document.getElementById("chat-box");
   const thinking = document.createElement("div");
   thinking.id = "thinking";
-  thinking.className = "text-purple-300 italic";
+  thinking.className = "text-purple-500 italic";
   thinking.innerHTML = `<span class="animate-pulse">MIRA está pensando<span class="animate-bounce">...</span></span>`;
   chatBox.appendChild(thinking);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Solo lee líneas normales, no fórmulas ni LaTeX, y agrega pausas naturales
+// Voz: solo lee líneas normales (no fórmulas), agrega pausas en puntos y comas
 function plainTextForVoice(markdown) {
   let text = markdown
     .split('\n')
     .filter(line =>
-      !line.trim().startsWith('$$') && !line.trim().endsWith('$$') && // No fórmulas centradas
-      !line.includes('$') && // No fórmulas inline
-      !/^ {0,3}`/.test(line) // No bloques de código
+      !line.trim().startsWith('$$') && !line.trim().endsWith('$$') &&
+      !line.includes('$') &&
+      !/^ {0,3}`/.test(line)
     )
-    .join('. ') // Une cada línea con punto y espacio para mejorar pausas
-    .replace(/\*\*([^*]+)\*\*/g, '$1')  // Quita negritas
-    .replace(/\*([^*]+)\*/g, '$1')      // Quita cursivas
+    .join('. ')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
     .replace(/__([^_]+)__/g, '$1')
     .replace(/_([^_]+)_/g, '$1')
-    .replace(/([.,;:!?\)])([^\s.])/g, '$1 $2') // Asegura espacio después de puntuación
+    .replace(/([.,;:!?\)])([^\s.])/g, '$1 $2')
     .replace(/\s+/g, ' ')
     .trim();
-
-  // Elimina puntos dobles (por unir dos líneas con punto)
-  text = text.replace(/\.{2,}/g, '.');
-  // Elimina punto final extra si está repetido
-  text = text.replace(/\. \./g, '. ');
-
+  text = text.replace(/\.{2,}/g, '.').replace(/\. \./g, '. ');
   return text;
 }
 
-// Voz y halo solo en texto limpio
 function speak(text) {
   try {
     const plain = plainTextForVoice(text);
     if (!plain) return;
     const msg = new SpeechSynthesisUtterance(plain);
     msg.lang = "es-ES";
+    msg.rate = 1.00;
     window.speechSynthesis.cancel();
     setAvatarTalking(true);
     msg.onend = () => setAvatarTalking(false);
@@ -93,12 +84,10 @@ function speak(text) {
   }
 }
 
-// Render Markdown y MathJax
 function renderMarkdown(text) {
   return marked.parse(text);
 }
 
-// Para evitar problemas de inyección
 function escapeHtml(text) {
   return text.replace(/[&<>"']/g, function (m) {
     return ({
@@ -111,12 +100,11 @@ function escapeHtml(text) {
   });
 }
 
-// Memoria de conversación (hilo)
 const chatHistory = [
   { role: "system", content: SYSTEM_PROMPT }
 ];
 
-// Saludo hablado inicial (al cargar la página)
+// Saludo inicial (voz)
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     speak("¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?");
@@ -134,12 +122,11 @@ async function sendMessage() {
   input.value = "";
   showThinking();
 
-  // Agrega mensaje de usuario al historial
   chatHistory.push({ role: "user", content: userMessage });
 
-  // Mantén solo los últimos 8 mensajes (puedes ajustar)
-  if (chatHistory.length > 9) {
-    chatHistory.splice(1, chatHistory.length - 8); // deja system y los últimos 8
+  // Mantén solo los últimos 10 mensajes (ajusta si quieres más memoria)
+  if (chatHistory.length > 11) {
+    chatHistory.splice(1, chatHistory.length - 10);
   }
 
   try {
@@ -159,26 +146,23 @@ async function sendMessage() {
     const data = await response.json();
     let aiReply = data.choices?.[0]?.message?.content || "";
 
-    // Si la respuesta es vacía o genérica, busca en Wikipedia
     if (
       !aiReply ||
       aiReply.toLowerCase().includes("no se pudo") ||
       aiReply.toLowerCase().includes("no encontré una respuesta")
     ) {
-      // Preguntas típicas de presentación, incluso con faltas
       if (
         /kien eres|quien eres|kien es mira|quien es mira|k eres|q eres|qué eres|ke eres|q puedes aser|qué puedes hacer|q asés|qué haces|qué asés|ke funcion tienes|qué funcion tienes|de donde vienes|de donde bvienes|presentate|preséntate|que puedes hacer|quien eres tu|quien sos|quien sos vos|quien soy|quien estoy|quien/.test(userMessage.toLowerCase())
       ) {
         aiReply = "Soy MIRA, una asistente virtual creada por Innova Space y OpenAI. Estoy diseñada para ayudarte a aprender y resolver tus dudas de manera clara, amigable y personalizada, en todas las materias escolares. Puedes preguntarme sobre matemáticas, ciencias, historia, tecnología y mucho más.";
       } else {
-        // Busca en Wikipedia
+        // Wikipedia fallback
         const wiki = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userMessage)}`);
         const wikiData = await wiki.json();
         aiReply = wikiData.extract || "Lo siento, no encontré una respuesta adecuada.";
       }
     }
 
-    // Agrega respuesta al historial para mantener el hilo
     chatHistory.push({ role: "assistant", content: aiReply });
 
     document.getElementById("thinking")?.remove();
@@ -203,5 +187,4 @@ async function sendMessage() {
   }
 }
 
-// Halo arranca quieto
 setAvatarTalking(false);
