@@ -3,144 +3,87 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Innova Space Education - MIRA AI</title>
+  <title>MIRA AI - Innova Space</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
     body {
-      background: linear-gradient(135deg, #ede7ff 0%, #c8e5fa 100%);
-      color: #23104a;
-      font-family: 'Segoe UI', Arial, sans-serif;
       margin: 0;
       padding: 0;
-    }
-
-    /* Sidebar */
-    #sidebar {
-      position: fixed;
-      left: 0; top: 0; bottom: 0;
-      width: 250px;
-      background: #f5f0ff;
-      border-right: 2px solid #a855f7;
-      box-shadow: 3px 0 16px #a855f711;
-      z-index: 40;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #e6e9f0 0%, #eef1f5 100%);
+      font-family: 'Segoe UI', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 30px 10px;
+      justify-content: center;
     }
-
-    #sidebar img.sidebar-logo {
-      height: 66px; margin-bottom: 22px;
-    }
-
-    .sidebar-section {
-      width: 100%;
-      padding: 0 20px;
-    }
-
-    /* Avatar */
-    #avatar-mira {
-      position: fixed;
-      right: 30px; top: 40px;
-      z-index: 60;
-      width: 110px; height: 110px;
-      border-radius: 50%;
-      box-shadow: 0 0 42px #a7e7ff44, 0 2px 14px #c7aaff;
-      cursor: grab;
-      user-select: none;
-      transition: box-shadow .2s, transform .2s;
-      background: #fff;
-    }
-
     #chat-container {
-      width: 100%;
-      max-width: 730px;
-      background: #23104ac8;
-      border-radius: 1.2em;
-      padding: 2.5em;
-      margin: 0 auto;
-      font-size: 1.18em;
-      color: #fff;
+      width: 90%;
+      max-width: 720px;
+      height: 440px;
+      background: #3c3262ee;
+      border-radius: 1.5rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      padding: 1.8rem;
+      color: white;
       overflow-y: auto;
-      min-height: 300px;
     }
-
     #chat-input-area {
       position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 30;
-      background: linear-gradient(0deg,#ede7ff 65%,transparent 100%);
-      padding: 18px 0 14px 0;
-      display: flex; justify-content: center; align-items: end; gap: 10px;
-    }
-
-    #user-input {
-      width: 50vw; max-width: 550px;
-      font-size: 1.18em;
-      border-radius: 0.6em;
-      border: 2px solid #b993fe;
-      padding: 0.88em 1.4em;
-      background: #fff;
-      color: #23104a;
-      box-shadow: 0 2px 9px #b993fe22;
-    }
-
-    #send-btn {
-      background: linear-gradient(90deg, #a855f7 60%, #40c9ff 100%);
-      border: none;
-      color: #fff;
-      border-radius: 0.6em;
-      font-size: 1.08em;
-      padding: 0.84em 2.2em;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    #volume-btn {
-      background: #fff;
-      border: 2px solid #b993fe;
-      color: #a855f7;
-      border-radius: 50%;
-      width: 42px; height: 42px;
-      font-size: 1.38em;
-      cursor: pointer;
+      bottom: 2rem;
+      width: 90%;
+      max-width: 720px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      background: white;
+      border-radius: 1rem;
+      padding: 0.5rem 1rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+      gap: 0.5rem;
+    }
+    #user-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+    }
+    #send-btn {
+      background: linear-gradient(90deg, #a855f7, #40c9ff);
+      border: none;
+      color: white;
+      border-radius: 0.8rem;
+      padding: 0.6rem 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #volume-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    #avatar-mira {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      box-shadow: 0 0 14px rgba(0,0,0,0.2);
+      cursor: grab;
     }
   </style>
 </head>
 <body>
-
-  <!-- Sidebar simple -->
-  <aside id="sidebar">
-    <img src="logo.png" alt="Logo Innova Space" class="sidebar-logo">
-    <div class="sidebar-section">
-      <b>Chats guardados</b>
-      <ul id="saved-chats" style="margin-top:7px;margin-bottom:5px;"></ul>
-      <button id="new-chat-btn" class="bg-blue-500 text-white rounded px-3 py-1 text-sm mt-1">Nuevo chat</button>
-    </div>
-  </aside>
-
-  <!-- Avatar flotante -->
-  <img id="avatar-mira" src="avatar_mira.svg" alt="Avatar MIRA" draggable="false">
-
-  <!-- Chat principal -->
-  <div id="chat-zone" style="padding: 60px 20px 120px;">
-    <div id="chat-container" class="chat-markdown"></div>
-  </div>
-
-  <!-- Área de input -->
+  <img src="avatar_mira.svg" id="avatar-mira" alt="MIRA" draggable="false">
+  <div id="chat-container" class="chat-markdown"></div>
   <div id="chat-input-area">
-    <input id="user-input" type="text" placeholder="Escribe tu mensaje..." autocomplete="off" />
+    <input id="user-input" type="text" placeholder="Escribe tu mensaje...">
     <button id="send-btn">Enviar</button>
-    <button id="volume-btn" title="Voz activada/desactivada"><span id="vol-icon">🔊</span></button>
+    <button id="volume-btn" title="Activar/Desactivar voz"><span id="vol-icon">🔊</span></button>
   </div>
-
-  <!-- Script principal -->
   <script src="chat.js"></script>
-
 </body>
 </html>
