@@ -26,7 +26,7 @@ document.addEventListener("mousemove", function(e){
 });
 
 // Configuración general
-const API_KEY = "TU_API_KEY_GROQ";
+const API_KEY = "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";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 let chatHistory = [];
