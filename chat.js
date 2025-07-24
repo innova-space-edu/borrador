@@ -1,82 +1,144 @@
-// ==== Configuración ====
-const API_KEY = "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";
-const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
-const MAX_HISTORY = 12; // máximo de mensajes recordados
+// == AVATAR flotante y movible
+const avatar = document.getElementById("avatar-mira");
+let dragging = false, offsetX = 0, offsetY = 0;
+avatar.addEventListener("mousedown", function(e) {
+  dragging = true;
+  const rect = avatar.getBoundingClientRect();
+  offsetX = rect.left - e.clientX;
+  offsetY = rect.top - e.clientY;
+  avatar.style.transition = "none";
+  document.body.style.userSelect = "none";
+});
+document.addEventListener("mouseup", () => {
+  dragging = false;
+  avatar.style.transition = "";
+  document.body.style.userSelect = "";
+});
+document.addEventListener("mousemove", function(e){
+  if (!dragging) return;
+  let nx = e.clientX + offsetX, ny = e.clientY + offsetY;
+  nx = Math.max(10, Math.min(window.innerWidth - avatar.offsetWidth - 8, nx));
+  ny = Math.max(10, Math.min(window.innerHeight - avatar.offsetHeight - 8, ny));
+  avatar.style.left = nx + "px";
+  avatar.style.top = ny + "px";
+});
 
-// ==== Volumen/voz ====
-let voiceEnabled = true;
-const volumeBtn = document.getElementById("volume-btn");
-const volumeIcon = document.getElementById("volume-icon");
-volumeBtn.onclick = () => {
-  voiceEnabled = !voiceEnabled;
-  volumeBtn.classList.toggle("muted", !voiceEnabled);
-  volumeIcon.textContent = voiceEnabled ? "🔊" : "🔇";
-  localStorage.setItem("mira-voice", voiceEnabled ? "1" : "0");
+// == SIDEBAR toggle
+const sidebar = document.getElementById("sidebar");
+const sidebarToggle = document.getElementById("sidebar-toggle");
+function closeSidebar() { document.body.classList.remove("sidebar-open"); document.body.classList.add("sidebar-closed"); }
+function openSidebar()  { document.body.classList.remove("sidebar-closed"); document.body.classList.add("sidebar-open"); }
+sidebarToggle.onclick = function() {
+  if (document.body.classList.contains("sidebar-open")) closeSidebar();
+  else openSidebar();
 };
-if (localStorage.getItem("mira-voice") === "0") {
-  voiceEnabled = false;
-  volumeBtn.classList.add("muted");
-  volumeIcon.textContent = "🔇";
-}
+// Empieza cerrado
+closeSidebar();
 
-// ==== Chat histórico ====
+// Áreas desplegable
+const areasBtn = document.getElementById("areas-btn");
+const areasList = document.getElementById("areas-list");
+const areasArrow = document.getElementById("areas-arrow");
+areasBtn.onclick = () => {
+  areasList.classList.toggle("open");
+  areasArrow.textContent = areasList.classList.contains("open") ? "▲" : "▼";
+};
+
+// ========== CHAT FUNCIONES PRINCIPALES ========== //
+const API_KEY = "TU_API_KEY";
+const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+
 let chatHistory = [];
-if (localStorage.getItem("mira-chat-history")) {
-  try {
-    chatHistory = JSON.parse(localStorage.getItem("mira-chat-history")) || [];
-  } catch { chatHistory = []; }
-}
+let voiceActive = true;
 
-// ==== Guardar historial ====
-function saveHistory() {
-  localStorage.setItem("mira-chat-history", JSON.stringify(chatHistory.slice(-MAX_HISTORY)));
-}
+// Volume/Mute control
+const volBtn = document.getElementById("volume-btn");
+volBtn.onclick = function() {
+  voiceActive = !voiceActive;
+  volBtn.classList.toggle("active", voiceActive);
+};
 
-// ==== Mostrar mensajes ====
-function renderChat() {
-  const chatBox = document.getElementById("chat-box");
-  chatBox.innerHTML = "";
-  for (const msg of chatHistory) {
-    if (msg.role === "user") {
-      chatBox.innerHTML += `<div class="msg-user">${escapeHtml(msg.content)}</div>`;
-    } else {
-      chatBox.innerHTML += `<div class="msg-ai chat-markdown">${renderMarkdown(msg.content)}</div>`;
-    }
-  }
+// Mensaje inicial
+const chatContainer = document.getElementById("chat-container");
+function addMessage(role, content) {
+  const div = document.createElement("div");
+  div.innerHTML = (role === "user"
+    ? `<strong style="color:#e6beff">Tú:</strong> ` + escapeHtml(content)
+    : `<strong style="color:#97e5ff">MIRA:</strong> ` + renderMarkdown(content)
+  );
+  div.style.marginBottom = "0.7em";
+  chatContainer.appendChild(div);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+  if (role === "assistant" && voiceActive) speak(content);
   if (window.MathJax) MathJax.typesetPromise();
-  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// ==== Enviar mensaje ====
-async function sendMessage() {
-  const input = document.getElementById("user-input");
-  const userMessage = input.value.trim();
-  if (!userMessage) return;
+function escapeHtml(text) {
+  if (!text) return "";
+  return text.replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[m]);
+}
+function renderMarkdown(text) { return marked.parse(text || ""); }
 
-  chatHistory.push({role:"user", content: userMessage});
-  saveHistory();
-  renderChat();
-  input.value = "";
-  showThinking();
+// ========== Voz: SOLO LEE EXPLICACIONES, NO FORMULAS ========== //
+function speak(markdown) {
+  // Quitar LaTeX y tablas, limpiar para voz natural
+  let text = markdown.replace(/\$\$[\s\S]*?\$\$/g, ' ')
+    .replace(/\$[^$]*\$/g, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // Mejor pausa en puntos, comas, etc.
+  text = text.replace(/([.,;:!?\n])/g, "$1 ");
+  if (text && voiceActive) {
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = "es-ES";
+    msg.rate = 1.0; msg.pitch = 1.04;
+    window.speechSynthesis.cancel();
+    msg.onend = msg.onerror = () => {};
+    window.speechSynthesis.speak(msg);
+  }
+}
 
-  // Limitar historial
-  let history = chatHistory.slice(-MAX_HISTORY);
+// Prompt mejorado: pide explicación ANTES de fórmula, fórmula en LaTeX, lista de variables SIN LaTeX
+const SYSTEM_PROMPT = `
+Eres MIRA, la asistente de Innova Space Education. Si te piden una fórmula, ecuación o función matemática:
+- Primero, explica claramente con palabras qué representa y cómo se usa.
+- Después, muestra la ecuación/formula en LaTeX, sin explicar el código.
+- Si corresponde, agrega una breve lista de qué significa cada variable, SIN usar signos de $ ni LaTeX, solo con nombres normales.
+- Luego puedes mostrar un ejemplo o aplicaciones.
 
-  // Prompt mejorado (sin negaciones fuertes)
-  const SYSTEM_PROMPT = `
-Eres MIRA, la asistente virtual de Innova Space Education y OpenAI.
-- Si el usuario pide una fórmula, ecuación o función, primero explícalo con palabras claras, luego muéstrala en LaTeX.
-- Ejemplo: "La velocidad media es la variación de la posición dividido por la variación del tiempo. La fórmula es: $$v_m = \\frac{\\Delta x}{\\Delta t}$$"
-- En las definiciones, nunca uses símbolos LaTeX: escribe solo en texto normal. Ejemplo: "v_m es la velocidad media, Δx es el cambio en la posición, Δt es el cambio en el tiempo."
-- Si ves palabras mal escritas, errores o frases poco claras, corrige y responde como si estuviera bien escrito.
-- Sigue el contexto y mantén la conversación, aunque las preguntas sean cortas o repetidas.
-- Usa frases completas, listas y resalta ideas importantes en negrita usando Markdown.
-- Si puedes, da siempre un ejemplo o resumen breve al final.
-- Responde SIEMPRE en español.
-  `;
+Responde de forma clara, ordenada y amigable para estudiantes chilenos. Si hay errores de ortografía o frases poco claras, interpreta el mensaje y responde correctamente. Mantén la conversación y permite preguntas de seguimiento.
 
+Nunca expliques el código LaTeX ni uses signos $ para las definiciones de variables.
+`;
+
+// Render mensaje inicial al cargar
+window.addEventListener("DOMContentLoaded", () => {
+  chatContainer.innerHTML = "";
+  addMessage("assistant", "¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?");
+});
+
+// ========== ENVÍO Y API ========== //
+const sendBtn = document.getElementById("send-btn");
+const userInput = document.getElementById("user-input");
+userInput.addEventListener("keydown", function(event) {
+  if (event.key === "Enter") { sendBtn.click(); }
+});
+sendBtn.onclick = async function() {
+  const text = userInput.value.trim();
+  if (!text) return;
+  addMessage("user", text);
+  chatHistory.push({role:"user",content:text});
+  userInput.value = "";
+  // Loading...
+  addMessage("assistant", '<span style="color:#a2adf0;font-style:italic">MIRA está pensando...</span>');
+
+  // Contexto corto (últimos 5 mensajes)
+  const historyToSend = chatHistory.slice(-5);
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${API_KEY}`,
@@ -85,152 +147,61 @@ Eres MIRA, la asistente virtual de Innova Space Education y OpenAI.
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          {role: "system", content: SYSTEM_PROMPT},
-          ...history.map(m => ({role: m.role, content: m.content}))
+          { role: "system", content: SYSTEM_PROMPT },
+          ...historyToSend
         ],
-        temperature: 0.7
+        temperature: 0.75
       })
     });
-
-    const data = await response.json();
-    document.getElementById("thinking")?.remove();
-    let aiReply = data.choices?.[0]?.message?.content || "";
-
-    // Si el modelo no responde nada útil, busca en Wikipedia
-    if (!aiReply || aiReply.trim() === "" || aiReply.toLowerCase().includes("no encontr")) {
-      const wiki = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userMessage)}`);
-      const wikiData = await wiki.json();
-      aiReply = wikiData.extract || "Lo siento, no encontré una respuesta adecuada.";
-    }
-
-    chatHistory.push({role:"assistant", content: aiReply});
-    saveHistory();
-    renderChat();
-    speak(aiReply);
-
-  } catch (error) {
-    document.getElementById("thinking")?.remove();
-    chatHistory.push({role:"assistant", content:"<span style='color:#fc7b7b'>Error al conectar con la IA.</span>"});
-    renderChat();
-    console.error(error);
+    const data = await resp.json();
+    // Quita el "pensando"
+    chatContainer.lastChild?.remove();
+    let content = data.choices?.[0]?.message?.content || "No entendí la respuesta. ¿Puedes intentar de nuevo?";
+    addMessage("assistant", content);
+    chatHistory.push({role:"assistant",content});
+  } catch (e) {
+    chatContainer.lastChild?.remove();
+    addMessage("assistant", "Error de conexión o respuesta. Intenta de nuevo.");
   }
-}
-
-// ==== Mostrar pensando... ====
-function showThinking() {
-  const chatBox = document.getElementById("chat-box");
-  chatBox.innerHTML += `<div id="thinking" class="text-purple-300 italic mb-4 animate-pulse">MIRA está pensando...</div>`;
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-// ==== Markdown + MathJax ====
-function renderMarkdown(text) {
-  return marked.parse(text || "");
-}
-function escapeHtml(text) {
-  return text.replace(/[&<>"']/g, function (m) {
-    return ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[m];
-  });
-}
-
-// ==== Voz solo para explicaciones ====
-function plainTextForVoice(markdown) {
-  // Quitar $...$ $$...$$ y limpiar
-  let text = markdown.replace(/\$\$[\s\S]*?\$\$/g, ' ')
-    .replace(/\$[^$]*\$/g, ' ')
-    .replace(/`[^`]+`/g, ' ')
-    .replace(/<\/?[^>]+>/g, '')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/__([^_]+)__/g, '$1')
-    .replace(/_([^_]+)_/g, '$1')
-    .replace(/\s+/g, ' ')
-    .replace(/([.,;:!])(\S)/g, '$1 $2')
-    .trim();
-  return text;
-}
-function speak(text) {
-  if (!voiceEnabled) return;
-  try {
-    const plain = plainTextForVoice(text);
-    if (!plain) return;
-    const msg = new SpeechSynthesisUtterance(plain);
-    msg.lang = "es-ES";
-    msg.rate = 1.04;
-    window.speechSynthesis.cancel();
-    msg.onend = () => {};
-    msg.onerror = () => {};
-    window.speechSynthesis.speak(msg);
-  } catch {}
-}
-
-// ==== Panel lateral desplegable ====
-const panel = document.getElementById("side-panel");
-const toggleBtn = document.getElementById("panel-toggle");
-let panelOpen = false;
-toggleBtn.onclick = () => {
-  panelOpen = !panelOpen;
-  panel.className = panelOpen ? "open shadow-2xl flex flex-col px-7 py-8 h-full" : "closed shadow-2xl flex flex-col px-7 py-8 h-full";
 };
-panel.className = "closed shadow-2xl flex flex-col px-7 py-8 h-full";
 
-// ==== Areas desplegable ====
-const areasBtn = document.querySelector("#areas-dropdown .dropdown-btn");
-const areasDrop = document.querySelector("#areas-dropdown");
-areasBtn.onclick = () => areasDrop.classList.toggle("open");
-
-// ==== Avatar flotante movible ====
-const avatar = document.getElementById("avatar-float");
-let isDragging = false, offset = {x:0, y:0};
-avatar.addEventListener("mousedown", function(e) {
-  isDragging = true;
-  offset = {
-    x: avatar.offsetLeft - e.clientX,
-    y: avatar.offsetTop - e.clientY
-  };
-  avatar.style.transition = "none";
-});
-document.addEventListener("mouseup", () => { isDragging = false; avatar.style.transition = ""; });
-document.addEventListener("mousemove", function(e){
-  if (!isDragging) return;
-  let nx = e.clientX + offset.x, ny = e.clientY + offset.y;
-  // límites para que no se salga
-  nx = Math.max(12, Math.min(window.innerWidth-130, nx));
-  ny = Math.max(12, Math.min(window.innerHeight-130, ny));
-  avatar.style.left = nx + "px";
-  avatar.style.top = ny + "px";
-});
-
-// ==== Chats guardados (demo básico) ====
-const savedChats = document.getElementById("saved-chats");
+// === Guardar chat en localStorage
+const savedChatsList = document.getElementById("saved-chats");
 const newChatBtn = document.getElementById("new-chat-btn");
-function saveCurrentChat() {
-  let all = JSON.parse(localStorage.getItem("mira-chats")||"[]");
-  all.push(chatHistory);
-  localStorage.setItem("mira-chats", JSON.stringify(all));
+
+function saveChat(name, history) {
+  let chats = JSON.parse(localStorage.getItem("miraChats") || "[]");
+  chats.push({name, history});
+  localStorage.setItem("miraChats", JSON.stringify(chats));
+  renderSavedChats();
 }
-function loadSavedChats() {
-  let all = JSON.parse(localStorage.getItem("mira-chats")||"[]");
-  savedChats.innerHTML = "";
-  all.forEach((c,i)=> {
+function renderSavedChats() {
+  let chats = JSON.parse(localStorage.getItem("miraChats") || "[]");
+  savedChatsList.innerHTML = "";
+  chats.forEach((chat, idx) => {
     const li = document.createElement("li");
-    li.innerHTML = `<a class="side-link" href="#">Chat ${i+1}</a>`;
-    li.onclick = () => { chatHistory = c; renderChat(); };
-    savedChats.appendChild(li);
+    li.textContent = chat.name;
+    li.style.cursor = "pointer";
+    li.onclick = () => loadChat(idx);
+    savedChatsList.appendChild(li);
   });
 }
-newChatBtn.onclick = () => { saveCurrentChat(); chatHistory = []; saveHistory(); renderChat(); loadSavedChats(); };
-loadSavedChats();
-
-// ==== Inicialización ====
-window.addEventListener('DOMContentLoaded', () => {
-  // Primer saludo solo si está vacío
-  if (chatHistory.length === 0) {
-    chatHistory = [{role:"assistant",content:"¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?"}];
-    saveHistory();
+function loadChat(idx) {
+  let chats = JSON.parse(localStorage.getItem("miraChats") || "[]");
+  if (!chats[idx]) return;
+  chatHistory = chats[idx].history.slice();
+  chatContainer.innerHTML = "";
+  for (const msg of chatHistory) {
+    addMessage(msg.role === "user" ? "user" : "assistant", msg.content);
   }
-  renderChat();
-});
+}
+newChatBtn.onclick = () => {
+  const nombre = "Chat " + (Math.floor(Math.random() * 900) + 100);
+  saveChat(nombre, chatHistory);
+  chatHistory = [];
+  chatContainer.innerHTML = "";
+  addMessage("assistant", "¡Nuevo chat iniciado!");
+};
+
+renderSavedChats();
 
