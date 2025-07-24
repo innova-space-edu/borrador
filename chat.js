@@ -96,7 +96,7 @@ async function sendMessage() {
         model: MODEL,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          ...conversation.slice(-10) // Mantiene contexto corto pero relevante
+          ...conversation.slice(-10)
         ],
         temperature: 0.7
       })
@@ -177,4 +177,3 @@ Donde:
 - Δx es el cambio en la posición
 - Δt es el cambio en el tiempo"
 `;
-
