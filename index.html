@@ -8,224 +8,308 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
-    html, body {
-      height: 100%;
+    body {
       min-height: 100vh;
-      background: linear-gradient(120deg, #ece9fe 0%, #e8ebff 100%);
-      color: #23145c;
+      background: linear-gradient(120deg, #e7e4fa 0%, #d7d1fd 100%);
+      font-family: 'Montserrat', 'Segoe UI', sans-serif;
     }
-    #sidebar {
-      background: #ede6fc;
-      border-right: 2px solid #a091ff;
-      transition: transform .28s cubic-bezier(.4,2,.3,1);
+    .sidebar {
+      min-width: 260px;
+      max-width: 270px;
+      background: #ede6fa;
+      box-shadow: 2px 0 16px #b0a6f35e;
+      padding: 1.6em 1em 1.2em 1.6em;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 30;
+      transition: left 0.2s;
     }
-    #sidebar.closed {
-      transform: translateX(-104%);
+    .main-content {
+      margin-left: 270px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: margin-left 0.2s;
     }
-    .avatar-ia {
-      width: 135px;
-      height: 135px;
-      margin-bottom: 8px;
-      transition: filter 0.3s, opacity 0.3s;
-      filter: drop-shadow(0 0 18px #c7aaffb6);
-      border-radius: 100%;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
+    @media (max-width: 800px) {
+      .sidebar {
+        position: fixed;
+        left: -270px;
+        top: 0;
+        height: 100vh;
+        transition: left 0.2s;
+        z-index: 50;
+      }
+      .sidebar.open {
+        left: 0;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+      #sidebar-toggle {
+        display: block;
+      }
     }
-    .avatar-ia.pulse {
-      animation: halo-glow 1.2s infinite alternate;
-      filter: drop-shadow(0 0 36px #8d71fa) brightness(1.18);
-    }
-    @keyframes halo-glow {
-      from { filter: drop-shadow(0 0 20px #b2a5fc) brightness(1.08); }
-      to   { filter: drop-shadow(0 0 46px #9673ff) brightness(1.28); }
-    }
-    /* Adaptativo mobile */
-    @media (max-width: 900px) {
-      #sidebar { position: fixed; z-index: 40; height: 100vh; }
-      #main { margin-left: 0 !important; }
-    }
-    @media (max-width: 640px) {
-      .avatar-ia { width: 70px; height: 70px;}
-    }
-    .accordion-btn {
-      cursor: pointer;
-      width: 100%;
+    #sidebar-toggle {
+      display: none;
+      position: absolute;
+      left: 10px;
+      top: 14px;
       background: transparent;
       border: none;
-      outline: none;
-      font-weight: bold;
-      color: #6246ea;
-      font-size: 1.14rem;
+      z-index: 60;
+    }
+    #avatar-mira {
+      display: inline-block;
+      width: 80px;
+      height: 80px;
+      margin-bottom: 2px;
+      margin-right: 15px;
+      vertical-align: middle;
+      transition: filter 0.3s, opacity 0.3s;
+      opacity: 1;
+      filter: grayscale(0.2) brightness(1.07);
+    }
+    #avatar-mira.pulse {
+      animation: halo-glow 1.2s infinite alternate;
+      filter: drop-shadow(0 0 16px #a855f7) brightness(1.19);
+      opacity: 1;
+    }
+    @keyframes halo-glow {
+      from { filter: drop-shadow(0 0 18px #4f46e5) brightness(1.12); }
+      to   { filter: drop-shadow(0 0 44px #38bdf8) brightness(1.25); }
+    }
+    .voice-controls {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      transition: color 0.19s;
+      gap: 10px;
+      margin-top: 8px;
+      margin-bottom: 0;
+      justify-content: center;
     }
-    .accordion-btn:hover {
-      color: #845ef7;
+    .voice-controls button {
+      border: none;
+      background: #fff;
+      border-radius: 100%;
+      padding: 2px 4px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px #9f7aea40;
+      transition: background 0.2s;
     }
-    .accordion-content {
-      display: none;
-      margin-top: 0.25em;
-      margin-bottom: 1em;
+    .voice-controls input[type=range] {
+      accent-color: #a855f7;
+      height: 3px;
+      margin-left: 6px;
+      margin-right: 6px;
     }
-    .accordion-content.open {
-      display: block;
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 670px;
+      margin: 0 auto;
     }
-    /* Chat burbuja minimal */
-    .chat-markdown {
-      font-size: 1.08em;
+    .chat-box {
+      width: 100%;
+      background: #23283a;
+      border-radius: 1.2em;
+      box-shadow: 0 6px 32px #a59fe3c8;
+      padding: 1.5em 1.4em 1em 1.4em;
+      color: #fff;
+      min-height: 160px;
+      max-height: 320px;
+      overflow-y: auto;
+      font-size: 1.09em;
+      margin-bottom: 0.8em;
     }
     .chat-markdown table {
-      border-collapse: collapse; margin: 0.5em 0;
+      border-collapse: collapse;
+      margin: 0.5em 0;
       width: 100%;
-      background: #f3f2fa;
-      color: #232146;
+      background: #22223b;
+      color: #fafafa;
+      font-size: 0.97rem;
     }
     .chat-markdown th, .chat-markdown td {
-      border: 1px solid #a091ff;
+      border: 1px solid #7f5af0;
       padding: 6px 10px;
       text-align: left;
     }
-    .chat-markdown th { background: #d9d6fa; }
+    .chat-markdown th { background: #4f378b; }
+    mjx-container[jax="CHTML"] {
+      font-size: 1.23em;
+      background: transparent !important;
+      padding: 0.11em 0.19em;
+      margin: 0.34em 0;
+    }
+    .input-row {
+      display: flex;
+      width: 100%;
+      margin-top: 0.2em;
+      gap: 0.6em;
+    }
+    .input-row input[type=text] {
+      flex: 1;
+      background: #f3f1fd;
+      border: 1.5px solid #c1b7ff;
+      border-radius: 0.6em;
+      padding: 0.98em 1em;
+      color: #33355b;
+      font-size: 1.1em;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .input-row input[type=text]:focus {
+      border-color: #a855f7;
+      background: #fff;
+    }
+    .input-row button {
+      background: #a855f7;
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1em;
+      padding: 0.85em 1.7em;
+      border: none;
+      border-radius: 0.7em;
+      cursor: pointer;
+      box-shadow: 0 2px 12px #8f5af08a;
+      transition: background 0.18s;
+    }
+    .input-row button:hover {
+      background: #7c36d1;
+    }
+    @media (max-width: 800px) {
+      .main-content {
+        margin-left: 0;
+        min-height: 100vh;
+        justify-content: flex-start;
+      }
+      .chat-container {
+        margin-top: 2.2em;
+      }
+      .chat-box {
+        min-height: 90px;
+        max-height: 220px;
+        font-size: 1em;
+        padding: 1.1em 0.9em 1em 1em;
+      }
+    }
   </style>
 </head>
-<body class="h-full">
-
-  <!-- Botón hamburguesa -->
-  <button id="menu-btn"
-    class="fixed left-3 top-3 z-50 w-11 h-11 flex flex-col justify-center items-center bg-purple-500 hover:bg-purple-700 rounded-xl shadow-lg lg:hidden"
-    aria-label="Abrir menú">
-    <span class="block w-7 h-1 bg-white my-1 rounded"></span>
-    <span class="block w-7 h-1 bg-white my-1 rounded"></span>
-    <span class="block w-7 h-1 bg-white my-1 rounded"></span>
+<body>
+  <button id="sidebar-toggle" title="Abrir menú" aria-label="Abrir menú">
+    <!-- Icono hamburguesa -->
+    <svg width="36" height="36" fill="none" stroke="#8b5cf6" stroke-width="2.3" viewBox="0 0 24 24">
+      <rect x="4" y="7" width="16" height="2" rx="1"/><rect x="4" y="15" width="16" height="2" rx="1"/>
+    </svg>
   </button>
-
-  <!-- Sidebar -->
-  <aside id="sidebar" class="fixed lg:static left-0 top-0 h-full w-72 flex flex-col px-7 py-8 z-40 shadow-xl transition-transform bg-opacity-95">
-    <div class="mb-8">
-      <h1 class="text-3xl font-extrabold bg-gradient-to-r from-purple-600 via-blue-500 to-pink-400 text-transparent bg-clip-text mb-1 leading-tight">
-        Innova Space Education
+  <aside class="sidebar" id="sidebar">
+    <div style="margin-bottom:1.3em;">
+      <h1 style="font-size:2em;font-weight:900;line-height:1.0;color:#7d55cf;margin-bottom:0.05em;">
+        Innova Space<br><span style="color:#a28afb;">Education</span>
       </h1>
-      <div class="text-base text-gray-800">Educación del futuro. Conectando estudiantes con IA.</div>
-    </div>
-    <div class="mb-6">
-      <button class="accordion-btn mb-1" id="areas-toggle">
-        Áreas que responde MIRA
-        <svg id="arrow-icon" class="w-5 h-5 ml-2 inline" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-      </button>
-      <div class="accordion-content" id="areas-list">
-        <ul class="pl-2 text-base">
-          <li>Matemáticas</li>
-          <li>Física</li>
-          <li>Química</li>
-          <li>Biología</li>
-          <li>Historia</li>
-          <li>Geografía</li>
-          <li>Lenguaje</li>
-          <li>Inglés</li>
-          <li>Artes Visuales</li>
-          <li>Música</li>
-          <li>Educación Física</li>
-          <li>Filosofía</li>
-          <li>Tecnología</li>
-          <li>Orientación</li>
-        </ul>
-      </div>
-    </div>
-    <div class="mb-6">
-      <div class="font-bold text-purple-700 mb-1">¿Quiénes somos?</div>
-      <div class="text-gray-700 text-[1rem]">
-        Plataforma educativa que integra inteligencia artificial para apoyar el aprendizaje de los estudiantes.
-      </div>
+      <div style="font-size:1.13em;color:#5e5a7e;margin-bottom:0.5em;margin-top:0.2em;">Educación del futuro.<br>Conectando estudiantes con IA.</div>
     </div>
     <div>
-      <div class="font-bold text-purple-700 mb-1">Chats guardados</div>
-      <ul id="history-list" class="chat-history-list pl-2 text-[1.02rem] text-blue-700"></ul>
-      <button id="new-chat-btn" class="mt-3 px-4 py-1 rounded bg-purple-500 text-white font-bold text-sm hover:bg-purple-700">Nuevo chat</button>
+      <button id="areas-btn" style="font-size:1.12em;font-weight:700;color:#6d47d2;background:none;border:none;padding:0;outline:none;display:flex;align-items:center;gap:0.4em;cursor:pointer;">
+        Áreas que responde MIRA
+        <span id="areas-arrow" style="transition:transform 0.18s;"><svg width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </button>
+      <ul id="areas-list" style="list-style:none;margin:0.4em 0 0 0.9em;padding:0;font-size:1.08em;display:block;">
+        <li>Matemáticas</li>
+        <li>Física</li>
+        <li>Química</li>
+        <li>Biología</li>
+        <li>Historia</li>
+        <li>Geografía</li>
+        <li>Lenguaje</li>
+        <li>Inglés</li>
+        <li>Artes Visuales</li>
+        <li>Música</li>
+        <li>Educación Física</li>
+        <li>Filosofía</li>
+        <li>Tecnología</li>
+        <li>Orientación</li>
+      </ul>
+    </div>
+    <div style="margin-top:1.8em;">
+      <div style="font-weight:700;font-size:1.08em;color:#803fc6;">¿Quiénes somos?</div>
+      <div style="font-size:1.04em;color:#5e5a7e;max-width:230px;">Plataforma educativa que integra inteligencia artificial para apoyar el aprendizaje de los estudiantes.</div>
+    </div>
+    <div style="margin-top:2.4em;">
+      <div style="font-weight:700;font-size:1.1em;color:#803fc6;margin-bottom:0.3em;">Chats guardados</div>
+      <div>
+        <a href="#" style="color:#4326b7;text-decoration:underline;font-size:1em;">Chat 2</a><br>
+        <a href="#" style="color:#4326b7;text-decoration:underline;font-size:1em;">Chat 1</a>
+      </div>
+      <button style="margin-top:0.8em;background:#a855f7;color:#fff;font-weight:700;font-size:1em;border:none;border-radius:0.5em;padding:0.47em 1.2em;box-shadow:0 1px 4px #7f3cc07a;">Nuevo chat</button>
     </div>
   </aside>
-
-  <!-- Main (pantalla central) -->
-  <main id="main" class="flex flex-col min-h-screen items-center justify-center transition-all lg:ml-72">
-    <div class="flex flex-col items-center mt-10 mb-4">
-      <object id="avatar-mira"
-        type="image/svg+xml"
-        data="avatar_mira.svg"
-        class="avatar-ia"
-        tabindex="-1"
-        aria-hidden="true"></object>
-      <h2 class="text-4xl font-extrabold text-center mt-3 text-indigo-800">Asistente IA - MIRA</h2>
-    </div>
-    <div id="chat-box"
-      class="w-full max-w-2xl min-h-[280px] bg-white rounded-xl shadow-lg border border-purple-200 p-5 mb-4 overflow-y-auto text-base text-gray-900 chat-markdown"
-      style="height:340px;">
-      <div><strong>MIRA:</strong> ¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?</div>
-    </div>
-    <div class="flex gap-2 w-full max-w-2xl pb-6">
-      <input
-        aria-label="Escribe tu mensaje"
-        type="text" id="user-input"
-        placeholder="Escribe tu mensaje..."
-        class="flex-1 p-3 rounded-md bg-gray-100 text-gray-900 border border-gray-300"
-        autocomplete="off"
-        onkeydown="if(event.key==='Enter'){sendMessage();return false;}"
-      >
-      <button onclick="sendMessage()" class="bg-purple-500 hover:bg-purple-700 px-7 py-2 rounded-md text-white font-bold" tabindex="0">
-        Enviar
-      </button>
+  <main class="main-content">
+    <div class="chat-container">
+      <div class="voice-controls">
+        <object id="avatar-mira"
+          type="image/svg+xml"
+          data="avatar_mira.svg"
+          style="background:#ede6fa;border-radius:2.2em;"
+          tabindex="-1"
+          aria-hidden="true"></object>
+        <button id="mute-btn" title="Voz activada"><span id="mute-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#9f7aea" stroke-width="3" viewBox="0 0 24 24" width="32" height="32">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7V5l7 7z"/>
+            <path d="M19 12h-4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span></button>
+        <input id="volume-slider" type="range" min="0" max="100" value="100" class="w-24 accent-purple-400" title="Volumen"/>
+      </div>
+      <h2 class="text-4xl font-bold text-center mb-0 mt-2" style="color:#483da8;">Asistente IA - MIRA</h2>
+      <div class="chat-box chat-markdown" id="chat-box" aria-live="polite" style="margin-top:1.2em;">
+        <div>
+          <strong>MIRA:</strong> ¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?
+        </div>
+      </div>
+      <div class="input-row">
+        <input
+          aria-label="Escribe tu mensaje"
+          type="text" id="user-input"
+          placeholder="Escribe tu mensaje..."
+          autocomplete="off"
+        >
+        <button onclick="sendMessage()" tabindex="0">Enviar</button>
+      </div>
     </div>
   </main>
-
-  <script src="chat.js"></script>
   <script>
-    // Sidebar ocultar/mostrar (hamburguesa)
+    // Menú lateral hamburguesa
     const sidebar = document.getElementById('sidebar');
-    const menuBtn = document.getElementById('menu-btn');
-    menuBtn.onclick = () => {
-      sidebar.classList.toggle("closed");
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+    // Botón desplegable Áreas
+    const areasBtn = document.getElementById('areas-btn');
+    const areasList = document.getElementById('areas-list');
+    const areasArrow = document.getElementById('areas-arrow');
+    let areasOpen = true;
+    areasBtn.onclick = function() {
+      areasOpen = !areasOpen;
+      areasList.style.display = areasOpen ? 'block' : 'none';
+      areasArrow.style.transform = areasOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
     };
-    // Cerrar sidebar tocando fuera (mobile)
-    document.addEventListener('click', e => {
-      if (window.innerWidth < 900 && !sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
-        sidebar.classList.add("closed");
+    // Cerrar menú lateral al hacer clic fuera en móvil
+    document.addEventListener('click', function(e){
+      if(window.innerWidth <= 800 && sidebar.classList.contains('open')) {
+        if (!sidebar.contains(e.target) && e.target !== toggleBtn) {
+          sidebar.classList.remove('open');
+        }
       }
     });
-
-    // Áreas desplegable (acordeón)
-    const areasToggle = document.getElementById("areas-toggle");
-    const areasList = document.getElementById("areas-list");
-    const arrowIcon = document.getElementById("arrow-icon");
-    areasToggle.onclick = () => {
-      areasList.classList.toggle("open");
-      arrowIcon.style.transform = areasList.classList.contains("open") ? "rotate(180deg)" : "";
-    };
-    // Por defecto desplegado en desktop, cerrado en mobile
-    if (window.innerWidth < 900) areasList.classList.remove("open");
-    else areasList.classList.add("open");
-
-    // Demo: historial de chats (puedes mejorar con localStorage real)
-    const historyList = document.getElementById('history-list');
-    const newChatBtn = document.getElementById('new-chat-btn');
-    let chatCounter = 1;
-    let savedChats = [{ name: 'Chat 1', id: 1 }];
-    function renderHistory() {
-      historyList.innerHTML = "";
-      savedChats.slice().reverse().forEach(c => {
-        const li = document.createElement('li');
-        li.textContent = c.name;
-        li.onclick = () => alert("Abrir chat: " + c.name + " (Funcionalidad de carga pendiente)");
-        historyList.appendChild(li);
-      });
-    }
-    newChatBtn.onclick = () => {
-      chatCounter++;
-      savedChats.push({ name: 'Chat ' + chatCounter, id: Date.now() });
-      renderHistory();
-    };
-    renderHistory();
   </script>
+  <script src="chat.js"></script>
 </body>
 </html>
