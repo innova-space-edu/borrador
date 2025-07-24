@@ -1,147 +1,26 @@
 const API_KEY = "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";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
-// Config de voz global
-let isMuted = false;
-let voiceVolume = 1.0;
-
-// Historial en memoria
-let chatHistory = [
-  { role: "system", content: `
-Eres MIRA, una asistente virtual creada por Innova Space y OpenAI. Responde en español y ayuda a estudiantes de todas las edades.
-Si el usuario pide una fórmula, ecuación o función, primero **explica brevemente con palabras simples**, y luego escribe la fórmula en LaTeX (entre signos de dólar, para que se vea bien renderizado).
-**Ejemplo**: 
-"La velocidad media es la variación de la posición dividido por la variación del tiempo. 
-La fórmula es:
-$$v_m = \\frac{\\Delta x}{\\Delta t}$$"
-
-No incluyas código LaTeX ni signos de dólar en las explicaciones escritas, solo en la ecuación.
-Después de la fórmula, explica cada variable y su significado usando solo palabras (sin signos $).
-
-Corrige y responde aunque el usuario escriba con errores, palabras incompletas o frases poco claras.
-
-Intenta mantener el hilo de la conversación, responde ejemplos, explicaciones y nuevos cálculos si el usuario los pide.
-
-No te disculpes, ni avises de limitaciones, responde siempre lo mejor posible.
-
-Sé cercano, visual y claro.
-` }
+let muted = false;
+let volume = 1.0;
+let conversation = [
+  { role: "assistant", content: "¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?" }
 ];
 
-// ----------- AVATAR ANIMACIÓN -----------------
-function setAvatarTalking(isTalking) {
-  const avatar = document.getElementById("avatar-mira");
-  if (!avatar) return;
-  if (isTalking) {
-    avatar.classList.add("pulse");
-  } else {
-    avatar.classList.remove("pulse");
-  }
-}
-
-// ----------- TEXTO A VOZ -----------------
-function plainTextForVoice(markdown) {
-  // Elimina LaTeX ($...$ y $$...$$)
-  let text = markdown.replace(/\$\$[\s\S]*?\$\$/g, ' ');
-  text = text.replace(/\$[^$]*\$/g, ' ');
-  // Quita markdown (**negrita** etc)
-  text = text.replace(/\*\*([^*]+)\*\*/g, '$1');
-  text = text.replace(/\*([^*]+)\*/g, '$1');
-  text = text.replace(/__([^_]+)__/g, '$1');
-  text = text.replace(/_([^_]+)_/g, '$1');
-  // Quita viñetas y símbolos de listas
-  text = text.replace(/^\s*[\-\•]\s*/gm, '');
-  // Añade pausas en puntos y comas (voz más natural)
-  text = text.replace(/([.,:;!?])/g, '$1 <break time="400ms"/>');
-  // Quita saltos dobles (los convertimos en pausa más larga)
-  text = text.replace(/\n{2,}/g, ' <break time="650ms"/> ');
-  // Quita saltos simples (pausa corta)
-  text = text.replace(/\n/g, ' <break time="380ms"/> ');
-  // Espacios de más
-  text = text.replace(/\s+/g, ' ').trim();
-  return text;
-}
-
-function speak(text) {
-  if (isMuted) return;
-  try {
-    const plain = plainTextForVoice(text);
-    if (!plain) return;
-    const msg = new SpeechSynthesisUtterance(plain.replace(/<break time="(\d+)ms"\/>/g, "")); // Para que hable, pero puedes cambiar a usar SSML si implementas Speech API avanzada.
-    msg.lang = "es-ES";
-    msg.volume = voiceVolume;
-    setAvatarTalking(true);
-    msg.onend = () => setAvatarTalking(false);
-    msg.onerror = () => setAvatarTalking(false);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(msg);
-  } catch {
-    setAvatarTalking(false);
-  }
-}
-
-// -------------- RENDER MARKDOWN -----------------
 function renderMarkdown(text) {
-  return marked.parse(text);
+  // Renderiza markdown + latex a HTML
+  let html = marked.parse(text);
+  return html;
 }
 
-// ------------- VOLUMEN y MUTE -------------------
-const volumeSlider = document.getElementById('volume-slider');
-const muteBtn = document.getElementById('mute-btn');
-const muteIcon = document.getElementById('mute-icon');
-
-volumeSlider.addEventListener('input', function () {
-  voiceVolume = parseInt(volumeSlider.value, 10) / 100;
-  if (voiceVolume === 0) {
-    isMuted = true;
-    muteIcon.innerHTML = '🔇';
-    muteBtn.title = 'Voz desactivada';
-  } else {
-    isMuted = false;
-    muteIcon.innerHTML = '🔊';
-    muteBtn.title = 'Voz activada';
-  }
-});
-
-muteBtn.addEventListener('click', function () {
-  isMuted = !isMuted;
-  if (isMuted) {
-    muteIcon.innerHTML = '🔇';
-    muteBtn.title = 'Voz desactivada';
-    volumeSlider.value = 0;
-  } else {
-    muteIcon.innerHTML = '🔊';
-    muteBtn.title = 'Voz activada';
-    if (voiceVolume === 0) {
-      voiceVolume = 1.0;
-      volumeSlider.value = 100;
-    }
-  }
-});
-
-// ------------- ENVIAR MENSAJE ---------------
-document.getElementById("user-input").addEventListener("keydown", function(event) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    sendMessage();
-  }
-});
-
-window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    speak("¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?");
-    setAvatarTalking(false);
-  }, 800);
-});
-
-function showThinking() {
-  const chatBox = document.getElementById("chat-box");
-  const thinking = document.createElement("div");
-  thinking.id = "thinking";
-  thinking.className = "text-purple-300 italic";
-  thinking.innerHTML = `<span class="animate-pulse">MIRA está pensando<span class="animate-bounce">...</span></span>`;
-  chatBox.appendChild(thinking);
-  chatBox.scrollTop = chatBox.scrollHeight;
+function addBubble(role, text) {
+  const chatHistory = document.getElementById("chat-history");
+  const div = document.createElement("div");
+  div.className = (role === "user") ? "bubble-user" : "bubble-mira";
+  div.innerHTML = (role === "user" ? text : "<strong>MIRA:</strong> " + renderMarkdown(text));
+  chatHistory.appendChild(div);
+  chatHistory.scrollTop = chatHistory.scrollHeight;
+  if (window.MathJax) MathJax.typesetPromise();
 }
 
 function escapeHtml(text) {
@@ -156,18 +35,55 @@ function escapeHtml(text) {
   });
 }
 
+function setAvatarTalking(isTalking) {
+  const avatar = document.getElementById("avatar-mira");
+  if (!avatar) return;
+  if (isTalking) avatar.classList.add("pulse");
+  else avatar.classList.remove("pulse");
+}
+
+// Voz y halo solo en texto limpio, saltando fórmulas
+function plainTextForVoice(markdown) {
+  let text = markdown.replace(/\$\$[\s\S]*?\$\$/g, ' ');
+  text = text.replace(/\$[^$]*\$/g, ' ');
+  text = text.replace(/\*\*([^*]+)\*\*/g, '$1');
+  text = text.replace(/\*([^*]+)\*/g, '$1');
+  text = text.replace(/__([^_]+)__/g, '$1');
+  text = text.replace(/_([^_]+)_/g, '$1');
+  text = text.replace(/\s+/g, ' ').trim();
+  return text;
+}
+
+function speak(text) {
+  if (muted) return;
+  try {
+    const plain = plainTextForVoice(text);
+    if (!plain) return;
+    const msg = new SpeechSynthesisUtterance(plain);
+    msg.lang = "es-ES";
+    msg.volume = volume;
+    window.speechSynthesis.cancel();
+    setAvatarTalking(true);
+    msg.onend = () => setAvatarTalking(false);
+    msg.onerror = () => setAvatarTalking(false);
+    window.speechSynthesis.speak(msg);
+  } catch {
+    setAvatarTalking(false);
+  }
+}
+
+// --- ENVÍO Y MANEJO DEL MENSAJE ---
 async function sendMessage() {
   const input = document.getElementById("user-input");
-  const chatBox = document.getElementById("chat-box");
   const userMessage = input.value.trim();
   if (!userMessage) return;
 
-  chatBox.innerHTML += `<div><strong>Tú:</strong> ${escapeHtml(userMessage)}</div>`;
+  addBubble("user", escapeHtml(userMessage));
+  conversation.push({ role: "user", content: userMessage });
   input.value = "";
-  showThinking();
 
-  // Añade mensaje al historial (en memoria)
-  chatHistory.push({ role: "user", content: userMessage });
+  // Mensaje de "pensando"
+  addBubble("assistant", '<span class="text-purple-500 italic">MIRA está pensando...</span>');
 
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -178,37 +94,87 @@ async function sendMessage() {
       },
       body: JSON.stringify({
         model: MODEL,
-        messages: chatHistory,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          ...conversation.slice(-10) // Mantiene contexto corto pero relevante
+        ],
         temperature: 0.7
       })
     });
 
     const data = await response.json();
-    document.getElementById("thinking")?.remove();
+    // Elimina "MIRA está pensando..."
+    const chatHistory = document.getElementById("chat-history");
+    if (chatHistory.lastElementChild && chatHistory.lastElementChild.classList.contains("bubble-mira"))
+      chatHistory.removeChild(chatHistory.lastElementChild);
+
     let aiReply = data.choices?.[0]?.message?.content || "";
+    if (!aiReply || aiReply.toLowerCase().includes("no encontré una respuesta")) {
+      // Consulta Wikipedia solo si es necesario
+      const wiki = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userMessage)}`);
+      const wikiData = await wiki.json();
+      aiReply = wikiData.extract || "No tengo suficiente información sobre eso.";
+    }
 
-    // Añadir respuesta al historial para mantener contexto conversacional
-    chatHistory.push({ role: "assistant", content: aiReply });
-
-    // Renderizar Markdown + MathJax
-    const html = renderMarkdown(aiReply);
-    chatBox.innerHTML += `<div><strong>MIRA:</strong> <span class="chat-markdown">${html}</span></div>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    // Voz SOLO de lo que se muestra
+    conversation.push({ role: "assistant", content: aiReply });
+    addBubble("assistant", aiReply);
     speak(aiReply);
 
-    // Re-renderizar MathJax para fórmulas
-    if (window.MathJax) MathJax.typesetPromise();
-
   } catch (error) {
-    document.getElementById("thinking")?.remove();
-    chatBox.innerHTML += `<div><strong>MIRA:</strong> Error al conectar con la IA.</div>`;
+    // Elimina "pensando"
+    const chatHistory = document.getElementById("chat-history");
+    if (chatHistory.lastElementChild && chatHistory.lastElementChild.classList.contains("bubble-mira"))
+      chatHistory.removeChild(chatHistory.lastElementChild);
+    addBubble("assistant", "Ocurrió un error al conectar con la IA.");
     setAvatarTalking(false);
     console.error(error);
   }
+  setAvatarTalking(false);
 }
 
-// Halo arranca quieto
-setAvatarTalking(false);
+// ---- VOLUMEN Y MUTE ----
+document.getElementById("mute-btn").onclick = function () {
+  muted = !muted;
+  document.getElementById("mute-icon").textContent = muted ? "🔇" : "🔊";
+};
+document.getElementById("volume-slider").oninput = function (e) {
+  volume = Number(e.target.value) / 100.0;
+};
+
+// --- INPUT Y BOTÓN ENVÍO ---
+document.getElementById("send-btn").onclick = sendMessage;
+document.getElementById("user-input").addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    sendMessage();
+  }
+});
+
+// ---- LIMPIA TODO AL RECARGAR ----
+window.onload = () => {
+  document.getElementById("chat-history").innerHTML = "";
+  conversation = [
+    { role: "assistant", content: "¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?" }
+  ];
+  addBubble("assistant", conversation[0].content);
+  setAvatarTalking(false);
+  muted = false;
+  volume = 1.0;
+  document.getElementById("mute-icon").textContent = "🔊";
+  document.getElementById("volume-slider").value = 100;
+};
+
+const SYSTEM_PROMPT = `
+Eres MIRA, una asistente virtual de inteligencia artificial creada por Innova Space y OpenAI. Antes de escribir cualquier fórmula, ecuación o función, explica con palabras simples su significado. Después, muestra la fórmula en LaTeX para una mejor visualización, pero nunca expliques el código. No repitas símbolos LaTeX en listas de explicación. Si el usuario continúa con preguntas sobre el mismo tema, sigue el hilo usando el historial de la conversación. Organiza todo en párrafos y listas simples, NO en bloques de código. Si el usuario lo pide, resume los puntos clave.
+Responde siempre en español. Ejemplo de explicación:
+"La velocidad media es la variación de la posición dividido por la variación del tiempo.
+La fórmula es:
+$$
+v_m = \\frac{\\Delta x}{\\Delta t}
+$$
+Donde:
+- v_m es la velocidad media
+- Δx es el cambio en la posición
+- Δt es el cambio en el tiempo"
+`;
 
