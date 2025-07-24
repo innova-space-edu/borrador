@@ -1,180 +1,81 @@
-// === Configuración inicial ===
+// ==== Configuración ====
 const API_KEY = "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";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
-const SYSTEM_PROMPT = `
-Eres MIRA, una asistente virtual creada por Innova Space y OpenAI. 
+const MAX_HISTORY = 12; // máximo de mensajes recordados
 
-- Si te piden una **fórmula, ecuación o función**, primero explica brevemente su significado con palabras simples y luego escríbela usando LaTeX, pero no aclares que es LaTeX ni uses signos de dólar en la explicación.
-- Usa explicaciones claras y amigables antes de mostrar cualquier fórmula.
-- Ejemplo:  
-La velocidad media es la variación de la posición dividido por la variación del tiempo.  
-La fórmula es:
-$$
-v_m = \\frac{\\Delta x}{\\Delta t}
-$$
-Donde:  
-v_m es la velocidad media  
-Δx es el cambio en la posición  
-Δt es el cambio en el tiempo
-
-- Responde siempre en español.
-- Mantén el contexto de la conversación anterior si el usuario hace referencia al mismo tema.
-- No expliques el código LaTeX, solo úsalo para que la fórmula se vea bonita.
-`;
-
-// === Estado ===
-let currentChatId = null;
-let isMuted = false;
-
-// ==== ELEMENTOS ====
-const chatList = document.getElementById("chat-list");
-const responseBox = document.getElementById("response-box");
-const input = document.getElementById("user-input");
-const sendBtn = document.getElementById("send-btn");
-const muteBtn = document.getElementById("mute-btn");
-
-// ============ FUNCIONES LOCALSTORAGE (CHATS) ===============
-function getAllChats() {
-  return JSON.parse(localStorage.getItem("mira_chats") || "{}");
-}
-function saveAllChats(chats) {
-  localStorage.setItem("mira_chats", JSON.stringify(chats));
-}
-function getChat(id) {
-  return getAllChats()[id] || {title:"Chat 1", history:[]};
-}
-function saveChat(id, chat) {
-  const chats = getAllChats();
-  chats[id] = chat;
-  saveAllChats(chats);
-}
-function deleteChat(id) {
-  const chats = getAllChats();
-  delete chats[id];
-  saveAllChats(chats);
-}
-function generateChatId() {
-  return "chat" + Date.now();
-}
-function listChats() {
-  chatList.innerHTML = "";
-  const chats = getAllChats();
-  const keys = Object.keys(chats);
-  if (keys.length === 0) {
-    // Crear chat por defecto si no hay ninguno
-    const id = generateChatId();
-    saveChat(id, {title: "Chat 1", history: []});
-    keys.push(id);
-  }
-  keys.forEach(id => {
-    const li = document.createElement("li");
-    const a = document.createElement("a");
-    a.href = "#";
-    a.textContent = chats[id].title || "Chat";
-    a.onclick = (e) => { e.preventDefault(); openChat(id); };
-    li.appendChild(a);
-    chatList.appendChild(li);
-  });
-}
-function newChat() {
-  const id = generateChatId();
-  saveChat(id, {title: "Chat " + (Object.keys(getAllChats()).length+1), history: []});
-  openChat(id);
-  listChats();
-}
-function openChat(id) {
-  currentChatId = id;
-  const chat = getChat(id);
-  renderHistory(chat.history);
-}
-function appendMessage(role, content) {
-  const chat = getChat(currentChatId);
-  chat.history = chat.history || [];
-  chat.history.push({role, content});
-  saveChat(currentChatId, chat);
-}
-function renderHistory(history) {
-  responseBox.innerHTML = "";
-  history.forEach(msg => {
-    if (msg.role === "user") {
-      responseBox.innerHTML += `<div style="color:#ffe46b;margin-bottom:0.5em;"><strong>Tú:</strong> ${escapeHtml(msg.content)}</div>`;
-    } else if (msg.role === "assistant") {
-      const html = renderMarkdown(msg.content);
-      responseBox.innerHTML += `<div style="margin-bottom:1.2em;"><strong>MIRA:</strong> <span class="chat-markdown">${html}</span></div>`;
-    }
-  });
-  if (window.MathJax) MathJax.typesetPromise();
-  responseBox.scrollTop = responseBox.scrollHeight;
+// ==== Volumen/voz ====
+let voiceEnabled = true;
+const volumeBtn = document.getElementById("volume-btn");
+const volumeIcon = document.getElementById("volume-icon");
+volumeBtn.onclick = () => {
+  voiceEnabled = !voiceEnabled;
+  volumeBtn.classList.toggle("muted", !voiceEnabled);
+  volumeIcon.textContent = voiceEnabled ? "🔊" : "🔇";
+  localStorage.setItem("mira-voice", voiceEnabled ? "1" : "0");
+};
+if (localStorage.getItem("mira-voice") === "0") {
+  voiceEnabled = false;
+  volumeBtn.classList.add("muted");
+  volumeIcon.textContent = "🔇";
 }
 
-// ========== MARKDOWN + LaTeX RENDER =========
-function renderMarkdown(text) {
-  return marked.parse(text || "");
-}
-function escapeHtml(text) {
-  return (text || "").replace(/[&<>"']/g, m =>
-    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
-  );
-}
-
-// ========== VOZ: solo lee texto plano y no LaTeX ==========
-function plainTextForVoice(md) {
-  // Quitar LaTeX $$...$$ y $...$
-  let txt = md.replace(/\$\$[\s\S]*?\$\$/g, " ");
-  txt = txt.replace(/\$[^$]*\$/g, " ");
-  // Quitar negritas/cursivas Markdown
-  txt = txt.replace(/\*\*([^*]+)\*\*/g, '$1')
-           .replace(/\*([^*]+)\*/g, '$1')
-           .replace(/__([^_]+)__/g, '$1')
-           .replace(/_([^_]+)_/g, '$1');
-  txt = txt.replace(/[\n\r]+/g, " ").replace(/\s+/g, " ").trim();
-  return txt;
-}
-function speak(text) {
-  if (isMuted) return;
+// ==== Chat histórico ====
+let chatHistory = [];
+if (localStorage.getItem("mira-chat-history")) {
   try {
-    const plain = plainTextForVoice(text);
-    if (!plain) return;
-    const msg = new SpeechSynthesisUtterance(plain);
-    msg.lang = "es-ES";
-    msg.rate = 1;
-    window.speechSynthesis.cancel();
-    setAvatarTalking(true);
-    msg.onend = () => setAvatarTalking(false);
-    msg.onerror = () => setAvatarTalking(false);
-    window.speechSynthesis.speak(msg);
-  } catch { setAvatarTalking(false);}
-}
-// ========== AVATAR ANIMADO ===========
-function setAvatarTalking(talking) {
-  const avatar = document.getElementById("avatar-mira");
-  if (talking) avatar.classList.add("pulse");
-  else avatar.classList.remove("pulse");
+    chatHistory = JSON.parse(localStorage.getItem("mira-chat-history")) || [];
+  } catch { chatHistory = []; }
 }
 
-// ========== ENVIAR MENSAJE ===========
+// ==== Guardar historial ====
+function saveHistory() {
+  localStorage.setItem("mira-chat-history", JSON.stringify(chatHistory.slice(-MAX_HISTORY)));
+}
+
+// ==== Mostrar mensajes ====
+function renderChat() {
+  const chatBox = document.getElementById("chat-box");
+  chatBox.innerHTML = "";
+  for (const msg of chatHistory) {
+    if (msg.role === "user") {
+      chatBox.innerHTML += `<div class="msg-user">${escapeHtml(msg.content)}</div>`;
+    } else {
+      chatBox.innerHTML += `<div class="msg-ai chat-markdown">${renderMarkdown(msg.content)}</div>`;
+    }
+  }
+  if (window.MathJax) MathJax.typesetPromise();
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// ==== Enviar mensaje ====
 async function sendMessage() {
+  const input = document.getElementById("user-input");
   const userMessage = input.value.trim();
   if (!userMessage) return;
-  appendMessage("user", userMessage);
-  input.value = "";
-  renderHistory(getChat(currentChatId).history);
 
-  // Indicador de pensando...
-  responseBox.innerHTML += `<div id="thinking" style="color:#c1afff;margin:1em 0;font-style:italic;"><span class="animate-pulse">MIRA está pensando...</span></div>`;
-  responseBox.scrollTop = responseBox.scrollHeight;
+  chatHistory.push({role:"user", content: userMessage});
+  saveHistory();
+  renderChat();
+  input.value = "";
+  showThinking();
+
+  // Limitar historial
+  let history = chatHistory.slice(-MAX_HISTORY);
+
+  // Prompt mejorado (sin negaciones fuertes)
+  const SYSTEM_PROMPT = `
+Eres MIRA, la asistente virtual de Innova Space Education y OpenAI.
+- Si el usuario pide una fórmula, ecuación o función, primero explícalo con palabras claras, luego muéstrala en LaTeX.
+- Ejemplo: "La velocidad media es la variación de la posición dividido por la variación del tiempo. La fórmula es: $$v_m = \\frac{\\Delta x}{\\Delta t}$$"
+- En las definiciones, nunca uses símbolos LaTeX: escribe solo en texto normal. Ejemplo: "v_m es la velocidad media, Δx es el cambio en la posición, Δt es el cambio en el tiempo."
+- Si ves palabras mal escritas, errores o frases poco claras, corrige y responde como si estuviera bien escrito.
+- Sigue el contexto y mantén la conversación, aunque las preguntas sean cortas o repetidas.
+- Usa frases completas, listas y resalta ideas importantes en negrita usando Markdown.
+- Si puedes, da siempre un ejemplo o resumen breve al final.
+- Responde SIEMPRE en español.
+  `;
 
   try {
-    // Envía solo últimos 10 turnos (para contexto)
-    const messages = [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...getChat(currentChatId).history.slice(-10).map(msg => ({
-        role: msg.role === "assistant" ? "assistant" : "user",
-        content: msg.content
-      })),
-      { role: "user", content: userMessage }
-    ];
-
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -183,7 +84,10 @@ async function sendMessage() {
       },
       body: JSON.stringify({
         model: MODEL,
-        messages: messages,
+        messages: [
+          {role: "system", content: SYSTEM_PROMPT},
+          ...history.map(m => ({role: m.role, content: m.content}))
+        ],
         temperature: 0.7
       })
     });
@@ -192,55 +96,141 @@ async function sendMessage() {
     document.getElementById("thinking")?.remove();
     let aiReply = data.choices?.[0]?.message?.content || "";
 
-    // Si no responde, busca Wikipedia
-    if (!aiReply || aiReply.toLowerCase().includes("no encontré")) {
+    // Si el modelo no responde nada útil, busca en Wikipedia
+    if (!aiReply || aiReply.trim() === "" || aiReply.toLowerCase().includes("no encontr")) {
       const wiki = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userMessage)}`);
       const wikiData = await wiki.json();
       aiReply = wikiData.extract || "Lo siento, no encontré una respuesta adecuada.";
     }
 
-    appendMessage("assistant", aiReply);
-    renderHistory(getChat(currentChatId).history);
-
-    // Voz solo de la respuesta nueva
+    chatHistory.push({role:"assistant", content: aiReply});
+    saveHistory();
+    renderChat();
     speak(aiReply);
 
-  } catch (err) {
+  } catch (error) {
     document.getElementById("thinking")?.remove();
-    appendMessage("assistant", "Ocurrió un error al conectar con la IA.");
-    renderHistory(getChat(currentChatId).history);
-    setAvatarTalking(false);
-    console.error(err);
+    chatHistory.push({role:"assistant", content:"<span style='color:#fc7b7b'>Error al conectar con la IA.</span>"});
+    renderChat();
+    console.error(error);
   }
 }
 
-// ========== EVENTOS ===========
-sendBtn.onclick = sendMessage;
-input.addEventListener("keydown", function(event) {
-  if (event.key === "Enter") { event.preventDefault(); sendMessage(); }
+// ==== Mostrar pensando... ====
+function showThinking() {
+  const chatBox = document.getElementById("chat-box");
+  chatBox.innerHTML += `<div id="thinking" class="text-purple-300 italic mb-4 animate-pulse">MIRA está pensando...</div>`;
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// ==== Markdown + MathJax ====
+function renderMarkdown(text) {
+  return marked.parse(text || "");
+}
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, function (m) {
+    return ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[m];
+  });
+}
+
+// ==== Voz solo para explicaciones ====
+function plainTextForVoice(markdown) {
+  // Quitar $...$ $$...$$ y limpiar
+  let text = markdown.replace(/\$\$[\s\S]*?\$\$/g, ' ')
+    .replace(/\$[^$]*\$/g, ' ')
+    .replace(/`[^`]+`/g, ' ')
+    .replace(/<\/?[^>]+>/g, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .replace(/\s+/g, ' ')
+    .replace(/([.,;:!])(\S)/g, '$1 $2')
+    .trim();
+  return text;
+}
+function speak(text) {
+  if (!voiceEnabled) return;
+  try {
+    const plain = plainTextForVoice(text);
+    if (!plain) return;
+    const msg = new SpeechSynthesisUtterance(plain);
+    msg.lang = "es-ES";
+    msg.rate = 1.04;
+    window.speechSynthesis.cancel();
+    msg.onend = () => {};
+    msg.onerror = () => {};
+    window.speechSynthesis.speak(msg);
+  } catch {}
+}
+
+// ==== Panel lateral desplegable ====
+const panel = document.getElementById("side-panel");
+const toggleBtn = document.getElementById("panel-toggle");
+let panelOpen = false;
+toggleBtn.onclick = () => {
+  panelOpen = !panelOpen;
+  panel.className = panelOpen ? "open shadow-2xl flex flex-col px-7 py-8 h-full" : "closed shadow-2xl flex flex-col px-7 py-8 h-full";
+};
+panel.className = "closed shadow-2xl flex flex-col px-7 py-8 h-full";
+
+// ==== Areas desplegable ====
+const areasBtn = document.querySelector("#areas-dropdown .dropdown-btn");
+const areasDrop = document.querySelector("#areas-dropdown");
+areasBtn.onclick = () => areasDrop.classList.toggle("open");
+
+// ==== Avatar flotante movible ====
+const avatar = document.getElementById("avatar-float");
+let isDragging = false, offset = {x:0, y:0};
+avatar.addEventListener("mousedown", function(e) {
+  isDragging = true;
+  offset = {
+    x: avatar.offsetLeft - e.clientX,
+    y: avatar.offsetTop - e.clientY
+  };
+  avatar.style.transition = "none";
+});
+document.addEventListener("mouseup", () => { isDragging = false; avatar.style.transition = ""; });
+document.addEventListener("mousemove", function(e){
+  if (!isDragging) return;
+  let nx = e.clientX + offset.x, ny = e.clientY + offset.y;
+  // límites para que no se salga
+  nx = Math.max(12, Math.min(window.innerWidth-130, nx));
+  ny = Math.max(12, Math.min(window.innerHeight-130, ny));
+  avatar.style.left = nx + "px";
+  avatar.style.top = ny + "px";
 });
 
-// ==== BOTÓN DE VOLUMEN ====
-muteBtn.onclick = () => {
-  isMuted = !isMuted;
-  muteBtn.classList.toggle("muted", isMuted);
-  muteBtn.innerHTML = isMuted
-    ? `<svg height="24" width="24" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03zm2.5 0c0 3.31-2.69 6-6 6v2c4.42 0 8-3.58 8-8h-2z"></path><line x1="4" y1="4" x2="20" y2="20" stroke="red" stroke-width="2"/></svg>`
-    : `<svg height="24" width="24" viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5l-5 5H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03zm2.5 0c0 3.31-2.69 6-6 6v2c4.42 0 8-3.58 8-8h-2z"></path></svg>`;
-};
+// ==== Chats guardados (demo básico) ====
+const savedChats = document.getElementById("saved-chats");
+const newChatBtn = document.getElementById("new-chat-btn");
+function saveCurrentChat() {
+  let all = JSON.parse(localStorage.getItem("mira-chats")||"[]");
+  all.push(chatHistory);
+  localStorage.setItem("mira-chats", JSON.stringify(all));
+}
+function loadSavedChats() {
+  let all = JSON.parse(localStorage.getItem("mira-chats")||"[]");
+  savedChats.innerHTML = "";
+  all.forEach((c,i)=> {
+    const li = document.createElement("li");
+    li.innerHTML = `<a class="side-link" href="#">Chat ${i+1}</a>`;
+    li.onclick = () => { chatHistory = c; renderChat(); };
+    savedChats.appendChild(li);
+  });
+}
+newChatBtn.onclick = () => { saveCurrentChat(); chatHistory = []; saveHistory(); renderChat(); loadSavedChats(); };
+loadSavedChats();
 
-// ========== INICIO ===========
-(function init(){
-  // Carga chats y abre el primero
-  listChats();
-  const keys = Object.keys(getAllChats());
-  if (keys.length === 0) newChat();
-  else openChat(keys[0]);
+// ==== Inicialización ====
+window.addEventListener('DOMContentLoaded', () => {
+  // Primer saludo solo si está vacío
+  if (chatHistory.length === 0) {
+    chatHistory = [{role:"assistant",content:"¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?"}];
+    saveHistory();
+  }
+  renderChat();
+});
 
-  // Voz desmuteada
-  isMuted = false;
-  muteBtn.classList.remove("muted");
-
-  // Avatar inicia quieto
-  setAvatarTalking(false);
-})();
