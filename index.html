@@ -7,308 +7,315 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:700,400&display=swap"/>
   <style>
     body {
-      background: linear-gradient(135deg, #eceaff 0%, #e1d7fd 100%);
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #ece6fb 0%, #e2d8ff 100%);
       min-height: 100vh;
-      font-family: 'Segoe UI', Arial, sans-serif;
       overflow-x: hidden;
     }
-    .floating-avatar {
-      position: fixed;
-      z-index: 1001;
-      top: 120px;
-      left: 48vw;
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: #fff8;
-      box-shadow: 0 6px 32px #bbaaff90;
-      cursor: grab;
-      user-select: none;
-      transition: box-shadow 0.2s;
-    }
-    .floating-avatar.pulse {
-      animation: halo-glow 1.2s infinite alternate;
-      filter: drop-shadow(0 0 24px #a855f7) brightness(1.15);
-    }
-    @keyframes halo-glow {
-      from { filter: drop-shadow(0 0 18px #7c3aed) brightness(1.11);}
-      to { filter: drop-shadow(0 0 44px #38bdf8) brightness(1.41);}
-    }
-    /* Panel lateral plegable */
-    #side-panel {
+    .sidebar {
       position: fixed;
       top: 0; left: 0;
-      width: 270px;
-      height: 100vh;
-      background: #ebe6fa;
-      border-right: 2px solid #cbb9ff;
-      box-shadow: 0 0 20px #bbaaff21;
-      z-index: 1000;
-      padding: 1.5em 1.1em 1.1em 1.2em;
-      transform: translateX(0);
-      transition: transform 0.24s;
+      width: 300px;
+      height: 100%;
+      background: #e3d6ff;
+      box-shadow: 4px 0 18px #8d7bbe21;
+      z-index: 50;
+      transition: transform .35s cubic-bezier(.7,0,.4,1);
+      transform: translateX(-102%);
+      border-right: 2px solid #c2b1fa;
+      padding: 1.8rem 1.2rem 1rem 2rem;
     }
-    #side-panel.closed {
-      transform: translateX(-100%);
-    }
-    #side-toggle {
-      position: fixed;
-      top: 22px; left: 18px;
-      z-index: 1100;
-      background: #a88cf6;
-      color: #fff;
-      border: none;
-      border-radius: 0.6em;
-      width: 36px; height: 36px;
-      font-size: 1.8em;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: left 0.2s;
-    }
-    #side-panel.closed ~ #side-toggle {
-      left: 18px;
-    }
-    /* Chatbox grande */
-    #main-section {
-      margin-left: 0;
-      transition: margin-left 0.24s;
-      padding-top: 40px;
-      width: 100vw;
-    }
-    @media (min-width: 700px) {
-      #main-section { margin-left: 270px; width: calc(100vw - 270px);}
-      #side-panel.closed ~ #main-section { margin-left: 0; width: 100vw;}
-    }
-    #chat-history {
-      width: 96vw;
-      max-width: 1100px;
-      min-height: 360px;
-      max-height: 68vh;
-      margin: 0 auto;
-      margin-top: 1.2em;
-      background: #262840;
-      border-radius: 1.5em;
-      padding: 2.2em 2em 2em 2em;
-      font-size: 1.16rem;
-      color: #f9f9fa;
-      overflow-y: auto;
-      box-shadow: 0 6px 42px #bbb3fa40;
-    }
-    .bubble-mira {
-      margin: 0.9em 0 0.7em 0.1em;
-      padding: 0.6em 1em 0.6em 1.2em;
-      background: none;
-      color: #f9f9fa;
-      font-size: 1.13em;
-      border-left: 4px solid #a07fff5c;
-      border-radius: 0.6em;
-      white-space: pre-wrap;
-      word-break: break-word;
-      overflow-x: auto;
-      font-weight: 500;
-    }
-    .bubble-user {
-      margin: 0.7em 0 0.7em auto;
-      background: #efe2fe;
-      color: #452aa7;
-      border-radius: 0.9em;
-      padding: 0.6em 1em 0.6em 1.2em;
-      max-width: 70%;
-      font-size: 1.13em;
-      box-shadow: 0 2px 9px #c9bcfa19;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    /* Entrada de texto + volumen a la derecha */
-    #input-bar {
-      width: 96vw;
-      max-width: 1100px;
-      display: flex;
-      align-items: center;
-      margin: 1.1em auto 0.6em auto;
-      gap: 1em;
-    }
-    #user-input {
-      flex: 1;
-      font-size: 1.13em;
-      border-radius: 0.8em;
-      border: 1.7px solid #d3b5ff;
-      background: #fcf7ff;
-      color: #262840;
-      padding: 1.1em 1em;
-      outline: none;
-      box-shadow: 0 2px 8px #bbaaff13;
-      font-weight: 500;
-    }
-    #send-btn {
-      font-size: 1.13em;
+    .sidebar.open { transform: translateX(0); }
+    .sidebar h1 { color: #8851f4; font-size: 2rem; font-weight: 800; letter-spacing: .02em;}
+    .sidebar .subtitle { font-size: 1.08rem; color: #463679; margin-top: .3em;}
+    .sidebar-section { margin-top: 1.7rem;}
+    .sidebar-section h2 {
+      font-size: 1.15rem;
       font-weight: 700;
-      border-radius: 0.8em;
-      background: linear-gradient(90deg, #a07fff 30%, #ca86ff 100%);
-      color: #fff;
-      border: none;
-      padding: 1em 2em;
-      box-shadow: 0 2px 9px #bbaaff35;
+      color: #6237c7;
+      margin-bottom: .8em;
+      display: flex; align-items: center; gap: .3em;
       cursor: pointer;
-      margin-right: 0.3em;
-      transition: background 0.15s;
-    }
-    #send-btn:hover { background: linear-gradient(90deg, #b98fff 0%, #d6a4ff 100%);}
-    #mute-btn {
-      padding: 0.8em 0.85em;
-      margin-left: 0.3em;
-      background: #eee3ff;
-      color: #6341d9;
-      border: none;
-      border-radius: 0.7em;
-      font-size: 1.3em;
-      cursor: pointer;
-      box-shadow: 0 2px 6px #bbaaff11;
-      display: flex;
-      align-items: center;
-      transition: background 0.15s;
-    }
-    #mute-btn.muted { color: #bba3ff; background: #ebdefe;}
-    /* Titular fijo */
-    #header-bar {
-      position: fixed;
-      top: 0; left: 0; width: 100vw;
-      background: #e8e1ffcc;
-      box-shadow: 0 1px 24px #a99cf821;
-      z-index: 1030;
-      display: flex;
-      align-items: center;
-      padding-left: 4em;
-      height: 65px;
-    }
-    #page-title {
-      font-size: 2.2em;
-      font-weight: 900;
-      letter-spacing: 0.04em;
-      color: #8450ff;
-      margin: 0 0 0 0.2em;
-      text-shadow: 0 3px 14px #bbaaff21;
-      font-family: 'Segoe UI', Arial, sans-serif;
       user-select: none;
     }
-    @media (max-width: 700px) {
-      #side-panel, #main-section { margin-left: 0 !important; }
-      #header-bar { padding-left: 1.3em;}
-      #chat-history, #input-bar { max-width: 99vw;}
+    .sidebar-list {
+      margin-left: .8em;
+      margin-bottom: 1.5em;
+      font-size: 1rem;
+      color: #333;
+      display: none;
+    }
+    .sidebar-list.open { display: block; }
+    .sidebar .chats { margin-top: 1.4em;}
+    .sidebar .chats li {margin-bottom: 0.2em;}
+    .sidebar .chats a {color:#6237c7;text-decoration:none;}
+    .sidebar .chats a:hover {text-decoration: underline;}
+    .sidebar .btn {margin-top:1em;background:#a678f3;color:#fff;padding:0.42em 1.1em;border-radius:.45em;font-weight:700;}
+    .sidebar .btn:active {background:#8851f4;}
+    /* Hamburger button */
+    .hamburger {
+      position: absolute; top: 1.4rem; left: 1.3rem; z-index: 100;
+      width: 2.4rem; height: 2.4rem; background: none; border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .hamburger:hover { background: #d6c6fa; border-radius: 50%; }
+    .hamburger span, .hamburger span:before, .hamburger span:after {
+      display: block; background: #8851f4; height: 4px; width: 32px; border-radius: 4px;
+      position: absolute; content: "";
+      transition: all .3s cubic-bezier(.7,0,.4,1);
+    }
+    .hamburger span { position: relative;}
+    .hamburger span:before { top: -10px; }
+    .hamburger span:after { top: 10px; }
+    /* --- main panel --- */
+    .main-panel {
+      min-height: 100vh; min-width: 100vw;
+      display: flex; flex-direction: column; align-items: center;
+      padding-top: 0.3em;
+      transition: filter .3s;
+    }
+    .title-main {
+      margin-top: 1.4em; font-size: 2.5rem; font-weight: 800; color: #4636a0;
+      text-align: center; letter-spacing: 0.01em;
+    }
+    /* Avatar flotante */
+    #avatar-mira {
+      position: fixed;
+      right: 4vw; top: 4.5vh;
+      width: 110px; height: 110px;
+      border-radius: 100%;
+      background: #fff;
+      box-shadow: 0 0 44px #c2b1fa88, 0 2px 16px #d7ccff;
+      z-index: 101;
+      cursor: move;
+      transition: filter .3s, opacity .3s, box-shadow .3s;
+      user-select: none;
+    }
+    #avatar-mira img { width: 100%; height: 100%; object-fit: contain;}
+    #avatar-mira-label {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      top: 84%; color: #6237c7; font-weight: 700; font-size: 1.06rem;
+      pointer-events: none;
+      text-shadow: 0 2px 10px #f4ecff60;
+    }
+    /* Área de respuesta grande */
+    #response-box {
+      width: min(80vw, 1100px);
+      min-height: 400px;
+      max-height: 62vh;
+      background: #262b3c;
+      color: #fff;
+      border-radius: 2em;
+      box-shadow: 0 6px 44px #7d65ba28, 0 2px 8px #6b509e1a;
+      margin-top: 2.3em;
+      margin-bottom: 2.2em;
+      padding: 2.3em 2.7em 2.3em 2.2em;
+      font-size: 1.23rem;
+      overflow-y: auto;
+      font-family: 'Montserrat', Arial, sans-serif;
+    }
+    #response-box strong { color: #ffe46b;}
+    #response-box table { background: #232542;}
+    #response-box th { background: #6336b6; color:#fff; }
+    /* Barra input */
+    .input-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin-bottom: 2.2em;
+    }
+    #user-input {
+      font-size: 1.18rem;
+      border-radius: 1.2em;
+      border: none;
+      outline: none;
+      padding: 1.15em 1.6em;
+      background: #eceaf9;
+      color: #333;
+      width: min(70vw, 820px);
+      margin-right: 1.2em;
+      box-shadow: 0 2px 12px #b1a7cf44;
+      font-family: 'Montserrat', Arial, sans-serif;
+    }
+    #user-input::placeholder { color: #b7b2cb;}
+    #send-btn {
+      background: #a678f3;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.18rem;
+      border-radius: 1em;
+      padding: 1em 2.2em;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 1px 6px #a678f3b5;
+      transition: background .2s;
+    }
+    #send-btn:hover { background: #8851f4;}
+    /* Botón volumen */
+    #mute-btn {
+      background: #ede5ff;
+      border: none;
+      border-radius: 1.4em;
+      margin-left: 1em;
+      padding: .6em 1em .6em .95em;
+      cursor: pointer;
+      font-size: 1.18rem;
+      box-shadow: 0 1px 6px #a678f3b5;
+      color: #4636a0;
+      display: flex; align-items: center;
+    }
+    #mute-btn svg {margin-right: .18em;}
+    #mute-btn.muted { color: #b1adc4; background: #eceaf9;}
+    /* Responsive tweaks */
+    @media (max-width:900px){
+      #response-box {width:98vw; padding:1em 0.8em;}
+      #user-input {width:85vw; font-size:1em;}
+      #avatar-mira { width:66px; height:66px; top:1.3vh; right:2vw;}
+      .sidebar { width:78vw;}
+    }
+    @media (max-width:600px){
+      #response-box {padding:0.6em 0.2em;}
+      #user-input { font-size:0.95em;}
+      .main-panel {padding-top:0.1em;}
+      #avatar-mira { width:48px; height:48px;}
     }
   </style>
 </head>
 <body>
-  <!-- Panel lateral -->
-  <div id="side-panel" class="">
-    <div class="font-extrabold text-2xl pb-2 text-[#7f4ffe]">Innova Space<br>Education</div>
-    <div class="text-sm pb-3 text-[#726e8a]">Educación del futuro.<br>Conectando estudiantes con IA.</div>
+  <!-- Panel lateral plegable -->
+  <button class="hamburger" id="hamburger-btn" aria-label="Abrir menú lateral">
+    <span></span>
+  </button>
+  <nav class="sidebar" id="sidebar">
+    <h1>Innova Space<br>Education</h1>
+    <div class="subtitle">Educación del futuro.<br>Conectando estudiantes con IA.</div>
 
-    <button onclick="toggleAreas()" class="w-full text-left font-bold text-lg text-[#4634b4] mt-4 mb-1 flex items-center select-none">
-      Áreas que responde MIRA
-      <span id="areas-arrow" class="ml-2 text-xl">&#9660;</span>
-    </button>
-    <ul id="areas-list" class="ml-1 mb-4">
-      <li>Matemáticas</li>
-      <li>Física</li>
-      <li>Química</li>
-      <li>Biología</li>
-      <li>Historia</li>
-      <li>Geografía</li>
-      <li>Lenguaje</li>
-      <li>Inglés</li>
-      <li>Artes Visuales</li>
-      <li>Música</li>
-      <li>Educación Física</li>
-      <li>Filosofía</li>
-      <li>Tecnología</li>
-      <li>Orientación</li>
-    </ul>
-    <div class="font-bold text-lg text-[#6c3dbe] mb-1 mt-5">¿Quiénes somos?</div>
-    <div class="text-sm mb-5 text-[#5b5799]">
-      Plataforma educativa que integra inteligencia artificial para apoyar el aprendizaje de los estudiantes.
+    <div class="sidebar-section">
+      <h2 id="areas-toggle">
+        Áreas que responde MIRA
+        <span id="areas-caret">▼</span>
+      </h2>
+      <ul id="areas-list" class="sidebar-list">
+        <li>Matemáticas</li>
+        <li>Física</li>
+        <li>Química</li>
+        <li>Biología</li>
+        <li>Historia</li>
+        <li>Geografía</li>
+        <li>Lenguaje</li>
+        <li>Inglés</li>
+        <li>Artes Visuales</li>
+        <li>Música</li>
+        <li>Educación Física</li>
+        <li>Filosofía</li>
+        <li>Tecnología</li>
+        <li>Orientación</li>
+      </ul>
     </div>
-    <div class="font-bold text-base text-[#7f4ffe] mb-1 mt-6">Chats guardados</div>
-    <ul id="chat-list" class="mb-2">
-      <li><a href="#" onclick="restoreChat(1)">Chat 1</a></li>
-      <li><a href="#" onclick="restoreChat(2)">Chat 2</a></li>
-    </ul>
-    <button onclick="newChat()" class="bg-[#b09cff] mt-2 px-4 py-2 rounded-lg text-white font-bold text-sm hover:bg-[#9476d1]">Nuevo chat</button>
-  </div>
-  <button id="side-toggle" onclick="toggleSidePanel()" title="Abrir/cerrar menú">&#9776;</button>
-  <!-- Header fijo -->
-  <div id="header-bar">
-    <span id="page-title">Innova Space Education</span>
-  </div>
+    <div class="sidebar-section">
+      <h2>¿Quiénes somos?</h2>
+      <div class="sidebar-list open" style="display:block;">
+        Plataforma educativa que integra inteligencia artificial para apoyar el aprendizaje de los estudiantes.
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h2>Chats guardados</h2>
+      <ul class="chats" id="chat-list"></ul>
+      <button class="btn" onclick="newChat()">Nuevo chat</button>
+    </div>
+  </nav>
 
-  <!-- Main Chat -->
-  <div id="main-section">
-    <div style="margin-top: 4.3em;"></div>
-    <!-- Avatar flotante (arrastrable) -->
-    <img id="avatar-mira" class="floating-avatar" src="avatar_mira.png" alt="MIRA Avatar" />
-    <!-- Título principal -->
-    <h2 class="text-4xl font-bold mt-1 mb-3 text-center text-[#4634b4] select-none">Asistente IA - MIRA</h2>
-    <!-- Chat grande -->
-    <div id="chat-history" aria-live="polite"></div>
-    <!-- Barra de entrada -->
-    <div id="input-bar">
+  <div class="main-panel">
+    <div class="title-main">Asistente IA - MIRA</div>
+    <!-- Avatar flotante -->
+    <div id="avatar-mira">
+      <img src="avatar_mira.png" alt="Avatar MIRA"/>
+      <div id="avatar-mira-label">MIRA<br><span style="font-weight:400;font-size:.98em;">Avatar</span></div>
+    </div>
+    <!-- Área de respuestas -->
+    <div id="response-box" class="chat-markdown">
+      <strong>MIRA:</strong> ¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?
+    </div>
+    <!-- Input de usuario -->
+    <form class="input-row" onsubmit="sendMessage();return false;">
       <input type="text" id="user-input" placeholder="Escribe tu mensaje..." autocomplete="off" aria-label="Escribe tu mensaje"/>
-      <button id="send-btn">Enviar</button>
-      <button id="mute-btn" title="Mutear/activar voz"><span id="mute-icon">🔊</span></button>
-    </div>
+      <button id="send-btn" type="submit">Enviar</button>
+      <button id="mute-btn" type="button" aria-label="Mutear/activar voz"><svg height="24" width="24" viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5l-5 5H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03zm2.5 0c0 3.31-2.69 6-6 6v2c4.42 0 8-3.58 8-8h-2z"></path></svg></button>
+    </form>
   </div>
+
   <script src="chat.js"></script>
   <script>
-    // Panel lateral plegable
-    function toggleSidePanel() {
-      const panel = document.getElementById("side-panel");
-      panel.classList.toggle("closed");
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const hamburger = document.getElementById('hamburger-btn');
+    let sidebarOpen = false;
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarOpen = false;
     }
-    // Áreas desplegable
-    function toggleAreas() {
-      const list = document.getElementById("areas-list");
-      const arrow = document.getElementById("areas-arrow");
-      if (list.style.display === "none") {
-        list.style.display = "block";
-        arrow.innerHTML = "&#9660;";
-      } else {
-        list.style.display = "none";
-        arrow.innerHTML = "&#9654;";
-      }
+    function openSidebar() {
+      sidebar.classList.add('open');
+      sidebarOpen = true;
     }
-    // Inicializa áreas abiertas por defecto
-    document.addEventListener("DOMContentLoaded", function () {
-      document.getElementById("areas-list").style.display = "block";
+    hamburger.addEventListener('click', () => {
+      if (sidebarOpen) closeSidebar();
+      else openSidebar();
     });
-    // Avatar flotante drag & drop puro JS
-    (() => {
-      const avatar = document.getElementById("avatar-mira");
-      let isDragging = false, offsetX = 0, offsetY = 0;
-      avatar.addEventListener('mousedown', function (e) {
-        isDragging = true;
+    // Comienza cerrado siempre
+    closeSidebar();
+    // Áreas toggle
+    document.getElementById('areas-toggle').onclick = function() {
+      const list = document.getElementById('areas-list');
+      if (list.classList.contains('open')) {
+        list.classList.remove('open');
+        list.style.display = 'none';
+        document.getElementById('areas-caret').textContent = "▼";
+      } else {
+        list.classList.add('open');
+        list.style.display = 'block';
+        document.getElementById('areas-caret').textContent = "▲";
+      }
+    };
+    // Avatar flotante drag & drop
+    (function() {
+      const avatar = document.getElementById('avatar-mira');
+      let dragging = false, offsetX = 0, offsetY = 0;
+      avatar.addEventListener('mousedown', function(e) {
+        dragging = true;
         offsetX = e.clientX - avatar.getBoundingClientRect().left;
         offsetY = e.clientY - avatar.getBoundingClientRect().top;
-        avatar.style.cursor = "grabbing";
+        avatar.style.transition = "none";
+        document.body.style.userSelect = "none";
       });
-      document.addEventListener('mousemove', function (e) {
-        if (!isDragging) return;
-        let x = e.clientX - offsetX, y = e.clientY - offsetY;
-        // límites de ventana
-        x = Math.max(10, Math.min(window.innerWidth - avatar.offsetWidth - 10, x));
-        y = Math.max(70, Math.min(window.innerHeight - avatar.offsetHeight - 10, y));
-        avatar.style.left = x + "px";
-        avatar.style.top = y + "px";
+      document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        avatar.style.left = (e.clientX - offsetX) + "px";
+        avatar.style.top = (e.clientY - offsetY) + "px";
+        avatar.style.right = "auto";
+        avatar.style.bottom = "auto";
       });
-      document.addEventListener('mouseup', function () {
-        isDragging = false;
-        avatar.style.cursor = "grab";
+      document.addEventListener('mouseup', function() {
+        if (dragging) {
+          dragging = false;
+          avatar.style.transition = "";
+          document.body.style.userSelect = "";
+        }
       });
-      // Prevent text select on drag
-      avatar.addEventListener('dragstart', e => e.preventDefault());
+      // Responsive: vuelve a la posición default si la ventana cambia
+      window.addEventListener('resize', () => {
+        avatar.style.left = "";
+        avatar.style.top = "";
+        avatar.style.right = "";
+        avatar.style.bottom = "";
+      });
     })();
   </script>
 </body>
