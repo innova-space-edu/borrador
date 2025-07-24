@@ -1,6 +1,6 @@
-// == AVATAR flotante y movible
 const avatar = document.getElementById("avatar-mira");
 let dragging = false, offsetX = 0, offsetY = 0;
+
 avatar.addEventListener("mousedown", function(e) {
   dragging = true;
   const rect = avatar.getBoundingClientRect();
@@ -9,11 +9,13 @@ avatar.addEventListener("mousedown", function(e) {
   avatar.style.transition = "none";
   document.body.style.userSelect = "none";
 });
+
 document.addEventListener("mouseup", () => {
   dragging = false;
   avatar.style.transition = "";
   document.body.style.userSelect = "";
 });
+
 document.addEventListener("mousemove", function(e){
   if (!dragging) return;
   let nx = e.clientX + offsetX, ny = e.clientY + offsetY;
@@ -23,27 +25,24 @@ document.addEventListener("mousemove", function(e){
   avatar.style.top = ny + "px";
 });
 
-// ========== CHAT FUNCIONES PRINCIPALES ========== //
-const API_KEY = "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";
+const API_KEY = "TU_API_KEY_DE_GROQ";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 let chatHistory = [];
 let voiceActive = true;
 
-// Volume/Mute control
 const volBtn = document.getElementById("volume-btn");
 const volIcon = document.getElementById("vol-icon");
 function updateVolumeBtn() {
   volBtn.classList.toggle("active", voiceActive);
   volIcon.textContent = voiceActive ? "🔊" : "🔇";
 }
-volBtn.onclick = function() {
+volBtn.onclick = () => {
   voiceActive = !voiceActive;
   updateVolumeBtn();
 };
 updateVolumeBtn();
 
-// Mensaje inicial
 const chatContainer = document.getElementById("chat-container");
 function addMessage(role, content) {
   const div = document.createElement("div");
@@ -59,113 +58,66 @@ function addMessage(role, content) {
 }
 
 function escapeHtml(text) {
-  if (!text) return "";
   return text.replace(/[&<>"']/g, m => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[m]);
 }
-function renderMarkdown(text) { return marked.parse(text || ""); }
+function renderMarkdown(text) {
+  return marked.parse(text || "");
+}
 
-// ========== Voz: SOLO LEE EXPLICACIONES, NO FORMULAS ========== //
 function speak(markdown) {
-  // Quitar LaTeX y tablas, limpiar para voz natural
   let text = markdown.replace(/\$\$[\s\S]*?\$\$/g, ' ')
     .replace(/\$[^$]*\$/g, ' ')
     .replace(/<[^>]*>/g, '')
     .replace(/\s+/g, ' ')
+    .replace(/([.,;:!?\n])/g, "$1 ")
     .trim();
-  // Mejor pausa en puntos, comas, etc.
-  text = text.replace(/([.,;:!?\n])/g, "$1 ");
   if (text && voiceActive) {
     const msg = new SpeechSynthesisUtterance(text);
     msg.lang = "es-ES";
-    msg.rate = 1.0; msg.pitch = 1.04;
+    msg.rate = 1.0;
+    msg.pitch = 1.04;
     window.speechSynthesis.cancel();
-    msg.onend = msg.onerror = () => {};
     window.speechSynthesis.speak(msg);
   }
 }
 
-// PROMPT ACTUALIZADO COMPLETO
 const SYSTEM_PROMPT = `
-Innova Space Education  
-Educación del futuro. Conectando estudiantes con IA.
+Eres MIRA, una asistente virtual de inteligencia artificial creada por Innova Space y OpenAI. Diseñada para apoyar a estudiantes y profesores en todas las materias escolares.
 
-¿Quién es MIRA?  
-MIRA (Modular Intelligent Responsive Assistant), en español: Asistente Modular, Inteligente y Reactivo.  
-Creada por Innova Space con tecnología OpenAI.  
-Diseñada para acompañar, explicar y ayudar a estudiantes y docentes de forma interactiva y personalizada en todas las materias.  
-Su misión es facilitar el aprendizaje, responder dudas, explicar fórmulas y conceptos, y guiarte en tu avance académico, con explicaciones claras y amigables.
+Cuando te pidan una **fórmula, ecuación o concepto**, sigue esta estructura:
 
-¿Quiénes somos?  
-Plataforma educativa que integra inteligencia artificial para apoyar el aprendizaje de los estudiantes.
+1. Explica el concepto con palabras simples.
+2. Muestra la fórmula en LaTeX usando `$...$` o `$$...$$`.
+3. Explica cada variable o símbolo con una lista clara.
+4. Ofrece un ejemplo práctico si aplica.
 
----
-
-Eres MIRA, una asistente virtual de inteligencia artificial creada por Innova Space y OpenAI, diseñada para apoyar a estudiantes y profesores en todas las materias escolares. Responde siempre en español, con explicaciones claras, ordenadas y fáciles de entender, adaptando el nivel de detalle según el usuario.
-
-Cuando te pidan una **fórmula, ecuación, función matemática o científica**, sigue estos pasos:
-
-1. **Explica primero con palabras sencillas** el concepto o significado antes de mostrar la fórmula.
-2. **Luego muestra la fórmula en LaTeX** (usando signos de dólar: `$...$` para fórmulas en línea o `$$...$$` para fórmulas centradas).
-3. **Después de la fórmula, explica cada variable o símbolo** en texto normal, usando listas claras. No uses LaTeX ni signos de dólar en esta parte.
-4. **Ofrece un ejemplo práctico o aplicación si corresponde**.
-
-**Ejemplo de estructura ideal:**
-
----
-La velocidad media es la variación de la posición dividida por la variación del tiempo.
-
-La fórmula es:
-$$
-v_m = \\frac{\\Delta x}{\\Delta t}
-$$
-Donde:
-- **vm** es la velocidad media
-- **Δx** es el cambio en la posición
-- **Δt** es el intervalo de tiempo
-
-¿Quieres un ejemplo de cómo aplicar esta fórmula?
----
-
-**Otras instrucciones importantes:**
-- Si hay un error ortográfico o la pregunta no está clara, intenta interpretarla y responde de la mejor manera posible.
-- Si la pregunta es ambigua, pide aclaración de forma breve y amable.
-- Usa títulos, listas, negrita (Markdown), y estructura visualmente agradable.
-- Si la respuesta es extensa, puedes ofrecer un resumen al final.
-- Si te preguntan varias veces sobre el mismo tema, mantén el contexto y responde como una conversación.
-- Si no sabes la respuesta, busca alternativas, ejemplos, o intenta explicarlo con lo que sabes, pero nunca respondas con negaciones.
-
-Recuerda: **No incluyas advertencias sobre limitaciones de IA** ni mensajes automáticos, a menos que te lo pidan.
-
-Responde siempre con amabilidad y usando buen ritmo, pausas, y frases bien puntuadas para facilitar la lectura en voz alta.
+Responde siempre con amabilidad, usando lenguaje claro y pausado. No incluyas advertencias sobre limitaciones de IA.
 `;
 
-// Render mensaje inicial al cargar
 window.addEventListener("DOMContentLoaded", () => {
   chatContainer.innerHTML = "";
   addMessage("assistant", "¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?");
 });
 
-// ========== ENVÍO Y API ========== //
 const sendBtn = document.getElementById("send-btn");
 const userInput = document.getElementById("user-input");
+
 userInput.addEventListener("keydown", function(event) {
-  if (event.key === "Enter") { sendBtn.click(); }
+  if (event.key === "Enter") sendBtn.click();
 });
+
 sendBtn.onclick = async function() {
   const text = userInput.value.trim();
   if (!text) return;
   addMessage("user", text);
   chatHistory.push({role:"user",content:text});
   userInput.value = "";
-  // Loading...
   addMessage("assistant", '<span style="color:#a2adf0;font-style:italic">MIRA está pensando...</span>');
 
-  // Contexto corto (últimos 5 mensajes)
-  const historyToSend = chatHistory.slice(-5);
   try {
-    const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${API_KEY}`,
@@ -175,20 +127,15 @@ sendBtn.onclick = async function() {
         model: MODEL,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          ...historyToSend
+          ...chatHistory.slice(-5)
         ],
         temperature: 0.75
       })
     });
-    const data = await resp.json();
-    // Quita el "pensando"
+
+    const data = await response.json();
     chatContainer.lastChild?.remove();
-    let content = (
-      data.choices?.[0]?.message?.content ||
-      data.choices?.[0]?.text ||
-      data.choices?.[0]?.content ||
-      "No entendí la respuesta. ¿Puedes intentar de nuevo?"
-    );
+    let content = data.choices?.[0]?.message?.content || "No entendí la respuesta.";
     addMessage("assistant", content);
     chatHistory.push({role:"assistant",content});
   } catch (e) {
@@ -197,7 +144,7 @@ sendBtn.onclick = async function() {
   }
 };
 
-// === Guardar chat en localStorage
+// Guardar y cargar chats
 const savedChatsList = document.getElementById("saved-chats");
 const newChatBtn = document.getElementById("new-chat-btn");
 
@@ -224,7 +171,7 @@ function loadChat(idx) {
   chatHistory = chats[idx].history.slice();
   chatContainer.innerHTML = "";
   for (const msg of chatHistory) {
-    addMessage(msg.role === "user" ? "user" : "assistant", msg.content);
+    addMessage(msg.role, msg.content);
   }
 }
 newChatBtn.onclick = () => {
