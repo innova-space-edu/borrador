@@ -9,154 +9,181 @@
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
     body {
-      background: linear-gradient(135deg, #edeaff 0%, #e8e9ff 100%);
+      background: linear-gradient(135deg, #eceaff 0%, #e1d7fd 100%);
       min-height: 100vh;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    #main-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2.5rem 1rem 0 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
     }
     #avatar-mira {
-      width: 120px;   /* AVATAR GRANDE */
-      height: 120px;
-      margin: 0 auto;
+      width: 98px;
+      height: 98px;
+      margin-bottom: 0.7rem;
+      margin-top: 1.3rem;
+      border-radius: 2.5rem;
+      box-shadow: 0 6px 32px #bbaaff80;
+      background: #f6f7ff;
       display: block;
-      transition: filter 0.3s, opacity 0.3s;
-      filter: drop-shadow(0 0 32px #b48af7) grayscale(0.2) brightness(1.08);
     }
     #avatar-mira.pulse {
-      animation: halo-glow 1.4s infinite alternate;
-      filter: drop-shadow(0 0 44px #96f7f3) brightness(1.25);
+      animation: halo-glow 1.2s infinite alternate;
+      filter: drop-shadow(0 0 24px #a855f7) brightness(1.15);
     }
     @keyframes halo-glow {
-      from { filter: drop-shadow(0 0 20px #98a6ea) brightness(1.1);}
-      to { filter: drop-shadow(0 0 70px #60f6e9) brightness(1.25);}
+      from { filter: drop-shadow(0 0 16px #4f46e5) brightness(1.13);}
+      to { filter: drop-shadow(0 0 40px #38bdf8) brightness(1.45);}
     }
     .bubble-mira {
-      background: #f7f7fc;
-      color: #181846;
-      margin: 1.3em auto 0.7em auto;
-      max-width: 670px;
-      width: 90vw;
-      border-radius: 1.5em;
-      padding: 1.3em 1.7em 1.2em 1.2em;
-      font-size: 1.2rem;
-      box-shadow: 0 4px 32px #8f99d811;
+      background: #23243a;
+      color: #fff;
+      margin: 0.7em 0 0.7em 0;
+      border-radius: 1.1em;
+      padding: 1.1em 1.5em 1.1em 1.1em;
+      max-width: 86%;
+      font-size: 1.1rem;
+      box-shadow: 0 2px 16px #beadff2c;
+      text-align: left;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      word-break: break-word;
+      margin-left: 0.5em;
     }
     .bubble-user {
-      background: #e3d7fd;
-      color: #5f3896;
-      max-width: 540px;
-      width: 84vw;
-      margin: 1.2em auto 0.2em auto;
-      border-radius: 1.5em 1.5em 0.9em 1.5em;
-      padding: 1em 1.2em 0.9em 1em;
-      font-size: 1.13rem;
-      font-weight: 500;
-      text-align: right;
-      box-shadow: 0 2px 16px #bb99ff20;
-    }
-    .chat-mainarea {
-      width: 100vw;
-      max-width: 850px;
-      margin: 0 auto;
-      min-height: 74vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding-bottom: 2em;
+      background: #e6dcfa;
+      color: #432d87;
+      border-radius: 1.1em;
+      padding: 1.1em 1.5em 1.1em 1.1em;
+      max-width: 80%;
+      margin: 0.6em 0 0.6em auto;
+      font-size: 1.1rem;
+      text-align: left;
+      box-shadow: 0 2px 12px #bbaaff18;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      word-break: break-word;
     }
     #chat-history {
-      flex: 1 1 auto;
+      background: #23243a;
+      border-radius: 1.5em;
+      padding: 2.1em 1.5em 2em 1.5em;
+      min-height: 320px;
+      max-height: 430px;
+      width: 96vw;
+      max-width: 690px;
+      margin: 1.2em 0 0.5em 0;
       overflow-y: auto;
-      margin-bottom: 1.3em;
-      max-height: 60vh;
-      min-height: 260px;
+      font-size: 1.13rem;
+      box-shadow: 0 6px 32px #bbaaff80;
     }
-    #user-input-area {
-      max-width: 740px;
-      margin: 0 auto;
+    #input-area {
       display: flex;
-      flex-direction: column;
-      gap: 0.8em;
-    }
-    #user-input-box {
-      display: flex;
-      gap: 0.6em;
+      width: 100%;
+      max-width: 690px;
       align-items: center;
+      margin: 1.2em 0 0.7em 0;
     }
     #user-input {
-      flex: 1 1 auto;
-      padding: 1.3em 1.1em;
-      border-radius: 1.1em;
-      border: 1.7px solid #cfcbe6;
-      background: #f6f4ff;
+      flex: 1;
+      padding: 1.1em;
+      border-radius: 0.9em;
       font-size: 1.1em;
-      color: #29265b;
-      box-shadow: 0 0.5px 2px #ebe9fa6a;
-      transition: border .2s;
-    }
-    #user-input:focus {
-      border: 1.7px solid #7b5be8;
+      border: 1.7px solid #c1a3fa;
+      background: #f7f4fd;
+      color: #23243a;
+      margin-right: 1em;
+      box-shadow: 0 2px 9px #bbaaff13;
       outline: none;
-      background: #fcfbfe;
     }
     #send-btn {
-      background: #b48af7;
-      color: #fff;
+      padding: 1.1em 2.1em;
+      font-size: 1.15em;
       font-weight: 600;
       border-radius: 0.9em;
-      padding: 1em 2.2em;
+      background: linear-gradient(90deg, #a07fff 30%, #ca86ff 100%);
+      color: #fff;
       border: none;
-      font-size: 1.13em;
-      box-shadow: 0 2px 9px #cdb6ff2a;
-      transition: background 0.18s;
+      cursor: pointer;
+      box-shadow: 0 2px 9px #bbaaff35;
+      transition: background 0.15s;
     }
     #send-btn:hover {
-      background: #8855e6;
-      cursor: pointer;
+      background: linear-gradient(90deg, #b98fff 0%, #d6a4ff 100%);
     }
-    #volume-controls {
-      margin: 0.7em auto 0 auto;
-      text-align: center;
-    }
-    #volume-slider {
-      width: 120px;
-      vertical-align: middle;
-      margin-left: 10px;
+    #controls-bar {
+      width: 100%;
+      max-width: 690px;
+      display: flex;
+      align-items: center;
+      gap: 1.4em;
+      margin-bottom: 1.1em;
+      margin-top: 0.1em;
+      justify-content: flex-end;
     }
     #mute-btn {
-      margin-left: 6px;
-      font-size: 1.5em;
-      background: none;
+      padding: 0.4em 0.7em;
+      background: #e5dbfb;
+      color: #512fb5;
+      border-radius: 0.7em;
+      font-size: 1.2em;
       border: none;
       cursor: pointer;
-      vertical-align: middle;
-      color: #7b5be8;
+      margin-right: 1.1em;
+      box-shadow: 0 2px 6px #bbaaff11;
+      display: flex;
+      align-items: center;
+      gap: 0.3em;
+    }
+    #volume-slider {
+      width: 85px;
+      accent-color: #a07fff;
+      margin-right: 1em;
+    }
+    @media (max-width: 900px) {
+      #main-container { padding: 1.2rem 0.2rem;}
+      #chat-history, #input-area, #controls-bar { max-width: 98vw; }
+    }
+    @media (max-width: 650px) {
+      #avatar-mira { width: 68px; height: 68px; }
+      #chat-history { padding: 1.1em 0.6em 1em 0.6em; }
+      #input-area { margin: 0.8em 0 0.4em 0; }
     }
   </style>
 </head>
 <body>
-  <!-- AVATAR GRANDE Y TÍTULO -->
-  <div style="text-align:center;margin-top:1.5em;">
-    <img id="avatar-mira" src="avatar_mira.svg" alt="MIRA Avatar">
-    <h1 style="margin:0.1em 0 0.25em 0;font-size:2.5em;font-weight:900;color:#3a329a;">Asistente IA - MIRA</h1>
+  <div id="main-container">
+    <!-- Avatar y título -->
+    <div style="display:flex; flex-direction:column; align-items:center;">
+      <img id="avatar-mira" src="avatar_mira.png" alt="Avatar MIRA" />
+    </div>
+    <h2 class="text-4xl font-bold mt-2 mb-3 text-center text-[#423ba0] select-none" style="letter-spacing:0.03em;">
+      Asistente IA - MIRA
+    </h2>
+
+    <!-- Chat history bubbles -->
+    <div id="chat-history" aria-live="polite"></div>
+
+    <!-- Input area -->
+    <form id="input-area" autocomplete="off" onsubmit="event.preventDefault(); sendMessage();">
+      <input type="text" id="user-input" placeholder="Escribe tu mensaje..." autocomplete="off" aria-label="Escribe tu mensaje"/>
+      <button id="send-btn" type="button">Enviar</button>
+    </form>
+
+    <!-- Barra de control volumen/mute -->
+    <div id="controls-bar">
+      <button id="mute-btn" title="Mutear/activar voz">
+        <span id="mute-icon">🔊</span>
+      </button>
+      <input id="volume-slider" type="range" min="0" max="100" value="100" title="Volumen" />
+    </div>
   </div>
-  <!-- ZONA DE CHAT PRINCIPAL -->
-  <main class="chat-mainarea">
-    <section id="chat-history">
-      <div class="bubble-mira"><strong>MIRA:</strong> ¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?</div>
-    </section>
-    <section id="user-input-area">
-      <div id="user-input-box">
-        <input id="user-input" type="text" autocomplete="off" placeholder="Escribe tu mensaje..." />
-        <button id="send-btn">Enviar</button>
-      </div>
-      <!-- Volumen debajo del input -->
-      <div id="volume-controls">
-        <button id="mute-btn" title="Voz activada"><span id="mute-icon">🔊</span></button>
-        <input id="volume-slider" type="range" min="0" max="100" value="100">
-      </div>
-    </section>
-  </main>
+
   <script src="chat.js"></script>
 </body>
 </html>
