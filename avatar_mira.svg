@@ -1,28 +1,46 @@
-
-<svg viewBox="0 0 300 300" width="220" height="220" xmlns="http://www.w3.org/2000/svg" id="mira-avatar">
-  <g id="blob-group">
-    <path id="blob" d="
-      M150,120 
-      C180,110 200,150 170,170 
-      C190,200 120,210 110,170 
-      C90,140 110,100 150,120
-    " fill="url(#grad)">
-      <animate attributeName="d" dur="3s" repeatCount="indefinite"
-        values="
-          M150,120 C180,110 200,150 170,170 C190,200 120,210 110,170 C90,140 110,100 150,120;
-          M150,130 C190,100 210,160 160,180 C180,210 130,210 100,170 C80,140 120,90 150,130;
-          M150,120 C180,110 200,150 170,170 C190,200 120,210 110,170 C90,140 110,100 150,120" />
-    </path>
-  </g>
-
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Gradiente de colores vibrantes -->
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff9933" />
-      <stop offset="25%" stop-color="#ffff33" />
-      <stop offset="50%" stop-color="#66ff66" />
-      <stop offset="75%" stop-color="#33ffff" />
-      <stop offset="100%" stop-color="#ff66cc" />
+    <linearGradient id="rainbow" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF3838">
+        <animate attributeName="stop-color" values="#FF3838;#FFAE38;#FFFF38;#38FF6B;#38FFF9;#386EFF;#B938FF;#FF38A1;#FF3838" dur="8s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="25%" stop-color="#FFAE38">
+        <animate attributeName="stop-color" values="#FFAE38;#FFFF38;#38FF6B;#38FFF9;#386EFF;#B938FF;#FF38A1;#FF3838;#FFAE38" dur="8s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="50%" stop-color="#38FF6B">
+        <animate attributeName="stop-color" values="#38FF6B;#38FFF9;#386EFF;#B938FF;#FF38A1;#FF3838;#FFAE38;#FFFF38;#38FF6B" dur="8s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="75%" stop-color="#386EFF">
+        <animate attributeName="stop-color" values="#386EFF;#B938FF;#FF38A1;#FF3838;#FFAE38;#FFFF38;#38FF6B;#38FFF9;#386EFF" dur="8s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#FF38A1">
+        <animate attributeName="stop-color" values="#FF38A1;#FF3838;#FFAE38;#FFFF38;#38FF6B;#38FFF9;#386EFF;#B938FF;#FF38A1" dur="8s" repeatCount="indefinite"/>
+      </stop>
     </linearGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" />
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
   </defs>
+  <!-- Glow de fondo -->
+  <ellipse cx="90" cy="100" rx="60" ry="50" fill="#fff" opacity="0.3" filter="url(#softGlow)">
+    <animate attributeName="rx" values="60;70;60" dur="5s" repeatCount="indefinite"/>
+    <animate attributeName="ry" values="50;55;50" dur="5s" repeatCount="indefinite"/>
+  </ellipse>
+  <!-- Blob amorfo animado -->
+  <path id="blob"
+    fill="url(#rainbow)" opacity="0.98"
+    d="M90,40 Q150,10 160,80 Q180,140 90,160 Q10,140 20,80 Q30,10 90,40 Z">
+    <animate attributeName="d" dur="7s" repeatCount="indefinite"
+      values="
+        M90,40 Q150,10 160,80 Q180,140 90,160 Q10,140 20,80 Q30,10 90,40 Z;
+        M100,38 Q168,34 152,92 Q171,155 92,154 Q16,156 32,92 Q33,30 100,38 Z;
+        M90,50 Q148,18 160,70 Q175,150 88,162 Q17,145 28,75 Q42,20 90,50 Z;
+        M90,40 Q150,10 160,80 Q180,140 90,160 Q10,140 20,80 Q30,10 90,40 Z
+      "
+    />
+  </path>
 </svg>
