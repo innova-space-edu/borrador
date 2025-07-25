@@ -2,94 +2,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MIRA AI - Chat Educativo</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  <script src="chat.js" defer></script>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background: linear-gradient(to bottom right, #e6e9f0, #f7f9fc);
-    }
-    #chat-container {
-      max-width: 800px;
-      margin: auto;
-      padding: 7rem 1rem 6rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .message {
-      max-width: 75%;
-      padding: 1rem;
-      border-radius: 1.5rem;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-      animation: fadeIn 0.3s ease-in-out;
-    }
-    .user { align-self: flex-end; background: #dbeafe; text-align: right; }
-    .bot { align-self: flex-start; background: #fff; text-align: left; }
-    #chat-input-area {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 1rem;
-      background: #ffffffee;
-      backdrop-filter: blur(4px);
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-    }
-    #user-input {
-      flex: 1;
-      max-width: 600px;
-      padding: 0.8rem 1rem;
-      font-size: 1rem;
-      border-radius: 2rem;
-      border: 1px solid #ccc;
-    }
-    #send-btn {
-      padding: 0.75rem 1.5rem;
-      background: linear-gradient(to right, #7f5af0, #00c2ff);
-      color: white;
-      border: none;
-      border-radius: 2rem;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    #avatar {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      width: 64px;
-      height: 64px;
-      cursor: grab;
-      z-index: 100;
-    }
-    #avatar.talking {
-      animation: bounce 0.6s infinite;
-    }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    #typing-indicator {
-      font-style: italic;
-      color: #666;
-      font-size: 0.9rem;
-      padding-left: 1rem;
-    }
-  </style>
 </head>
 <body>
   <img src="avatar_mira.svg" id="avatar" alt="Avatar MIRA" draggable="true" />
@@ -98,6 +15,11 @@
   <div id="chat-input-area">
     <input id="user-input" type="text" placeholder="Escribe tu mensaje..." />
     <button id="send-btn">Enviar</button>
+    <input type="file" id="image-upload" accept="image/*" />
   </div>
+
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="chat.js"></script>
 </body>
 </html>
