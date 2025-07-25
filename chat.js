@@ -1,7 +1,6 @@
 const API_KEY = "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";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
-// Prompt positivo y didáctico
 const SYSTEM_PROMPT = `
 Eres MIRA, una asistente virtual educativa creada por Innova Space y OpenAI.
 
@@ -23,11 +22,7 @@ Responde siempre en español, a menos que el usuario indique otro idioma.
 function setAvatarTalking(isTalking) {
   const avatar = document.getElementById("avatar-mira");
   if (!avatar) return;
-  if (isTalking) {
-    avatar.classList.add("pulse");
-  } else {
-    avatar.classList.remove("pulse");
-  }
+  avatar.classList.toggle("pulse", isTalking);
 }
 
 document.getElementById("user-input").addEventListener("keydown", function (event) {
@@ -65,10 +60,7 @@ function plainTextForVoice(markdown) {
     .replace(/\s+/g, ' ')
     .trim();
 
-  text = text.replace(/\.{2,}/g, '.');
-  text = text.replace(/\. \./g, '. ');
-
-  return text;
+  return text.replace(/\.{2,}/g, '.').replace(/\. \./g, '. ');
 }
 
 function speak(text) {
@@ -92,15 +84,9 @@ function renderMarkdown(text) {
 }
 
 function escapeHtml(text) {
-  return text.replace(/[&<>"']/g, function (m) {
-    return ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    })[m];
-  });
+  return text.replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[m]);
 }
 
 const chatHistory = [
@@ -125,10 +111,7 @@ async function sendMessage() {
   showThinking();
 
   chatHistory.push({ role: "user", content: userMessage });
-
-  if (chatHistory.length > 9) {
-    chatHistory.splice(1, chatHistory.length - 8);
-  }
+  if (chatHistory.length > 9) chatHistory.splice(1, chatHistory.length - 8);
 
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -147,15 +130,9 @@ async function sendMessage() {
     const data = await response.json();
     let aiReply = data.choices?.[0]?.message?.content || "";
 
-    if (
-      !aiReply ||
-      aiReply.toLowerCase().includes("no se pudo") ||
-      aiReply.toLowerCase().includes("no encontré una respuesta")
-    ) {
-      if (
-        /kien eres|quien eres|kien es mira|quien es mira|k eres|q eres|qué eres|ke eres|q puedes aser|qué puedes hacer|q asés|qué haces|qué asés|ke funcion tienes|qué funcion tienes|de donde vienes|de donde bvienes|presentate|preséntate|que puedes hacer|quien eres tu|quien sos|quien sos vos|quien soy|quien estoy|quien/.test(userMessage.toLowerCase())
-      ) {
-        aiReply = "Soy MIRA, una asistente virtual creada por Innova Space y OpenAI. Estoy diseñada para ayudarte a aprender y resolver tus dudas de manera clara, amigable y personalizada, en todas las materias escolares. Puedes preguntarme sobre matemáticas, ciencias, historia, tecnología y mucho más.";
+    if (!aiReply || aiReply.toLowerCase().includes("no se pudo") || aiReply.toLowerCase().includes("no encontré")) {
+      if (/quien eres|qué puedes hacer|presentate/.test(userMessage.toLowerCase())) {
+        aiReply = "Soy MIRA, una asistente virtual creada por Innova Space y OpenAI. Estoy diseñada para ayudarte a aprender y resolver tus dudas de manera clara, amigable y personalizada.";
       } else {
         const wiki = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userMessage)}`);
         const wikiData = await wiki.json();
@@ -164,39 +141,31 @@ async function sendMessage() {
     }
 
     chatHistory.push({ role: "assistant", content: aiReply });
-
     document.getElementById("thinking")?.remove();
     const html = renderMarkdown(aiReply);
-    chatBox.innerHTML += `
-      <div>
-        <strong>MIRA:</strong>
-        <span class="chat-markdown">${html}</span>
-      </div>
-    `;
+    chatBox.innerHTML += `<div><strong>MIRA:</strong><span class="chat-markdown">${html}</span></div>`;
     chatBox.scrollTop = chatBox.scrollHeight;
-
     speak(aiReply);
-
     if (window.MathJax) MathJax.typesetPromise();
 
   } catch (error) {
+    console.error(error);
     document.getElementById("thinking")?.remove();
     chatBox.innerHTML += `<div><strong>MIRA:</strong> Error al conectar con la IA.</div>`;
     setAvatarTalking(false);
-    console.error(error);
   }
 }
 
 setAvatarTalking(false);
 
-// NUEVA FUNCIÓN: análisis de imagen con OCR
+// 📸 Análisis de imagen (OCR + BLIP-2 visual)
 async function analyzeImage(event) {
   const file = event.target.files[0];
   if (!file) return;
 
   const chatBox = document.getElementById("chat-box");
-
   const reader = new FileReader();
+
   reader.onload = async function () {
     const base64 = reader.result.split(",")[1];
 
@@ -207,11 +176,12 @@ async function analyzeImage(event) {
     `;
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    chatBox.innerHTML += `<div id="thinking" class="text-purple-300 italic">MIRA está leyendo la imagen...</div>`;
+    chatBox.innerHTML += `<div id="thinking" class="text-purple-300 italic">MIRA está analizando la imagen...</div>`;
     chatBox.scrollTop = chatBox.scrollHeight;
 
+    // Paso 1: OCR
     try {
-      const response = await fetch("https://api.ocr.space/parse/image", {
+      const ocrRes = await fetch("https://api.ocr.space/parse/image", {
         method: "POST",
         headers: {
           apikey: "K82378316388957",
@@ -220,25 +190,41 @@ async function analyzeImage(event) {
         body: `base64Image=data:image/jpeg;base64,${base64}&language=spa`
       });
 
-      const result = await response.json();
-      const ocrText = result?.ParsedResults?.[0]?.ParsedText || "";
+      const ocrData = await ocrRes.json();
+      const ocrText = ocrData?.ParsedResults?.[0]?.ParsedText || "";
 
-      document.getElementById("thinking")?.remove();
-
-      if (!ocrText.trim()) {
-        chatBox.innerHTML += `<div><strong>MIRA:</strong> No pude leer ningún texto en la imagen.</div>`;
+      if (ocrText.trim().length >= 30) {
+        document.getElementById("thinking")?.remove();
+        chatBox.innerHTML += `<div><strong>MIRA:</strong> Detecté texto en la imagen:<br><em class="text-purple-200">${ocrText}</em></div>`;
+        document.getElementById("user-input").value = `Analiza este contenido extraído de una imagen: ${ocrText}`;
+        sendMessage();
         return;
       }
 
-      chatBox.innerHTML += `<div><strong>MIRA:</strong> Detecté este texto:<br><em class="text-purple-200">${ocrText}</em></div>`;
+      // Paso 2: Visión por IA con Hugging Face
+      chatBox.innerHTML += `<div class="text-purple-300">No detecté texto. Intentando analizar visualmente...</div>`;
 
-      document.getElementById("user-input").value = `Analiza este contenido de una imagen: ${ocrText}`;
+      const hfVision = await fetch("https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer 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",
+          "Content-Type": "application/octet-stream"
+        },
+        body: file
+      });
+
+      const result = await hfVision.json();
+      const caption = result?.[0]?.generated_text || "No pude interpretar visualmente la imagen.";
+
+      document.getElementById("thinking")?.remove();
+      chatBox.innerHTML += `<div><strong>MIRA:</strong> Esto es lo que veo en la imagen:<br><em class="text-purple-200">${caption}</em></div>`;
+      document.getElementById("user-input").value = `Analiza esta descripción generada visualmente: ${caption}`;
       sendMessage();
 
     } catch (error) {
       console.error("Error al analizar imagen:", error);
       document.getElementById("thinking")?.remove();
-      chatBox.innerHTML += `<div><strong>MIRA:</strong> Hubo un error al procesar la imagen.</div>`;
+      chatBox.innerHTML += `<div><strong>MIRA:</strong> No pude analizar la imagen.</div>`;
     }
   };
 
