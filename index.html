@@ -104,7 +104,6 @@
       border-radius: 0.6rem;
       font-weight: 500;
     }
-    /* Ya NO existe .mira-advance */
   </style>
 </head>
 <body class="bg-gradient-to-br from-black via-indigo-900 to-purple-900 text-white font-sans scroll-smooth">
@@ -148,13 +147,19 @@
             Enviar
           </button>
         </div>
+        <!-- Input para subir imagen -->
+        <div class="mt-4">
+          <input type="file" id="image-input" accept="image/*" onchange="analyzeImage(event)" class="text-sm text-gray-300" />
+        </div>
       </div>
+
       <!-- Botón ¿Quién es MIRA? debajo del chat -->
       <div class="flex justify-center mt-4">
         <button onclick="toggleMiraInfo()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg">
           ¿Quién es MIRA?
         </button>
       </div>
+
       <!-- Ventana flotante de descripción de MIRA -->
       <div id="mira-info">
         <h3>¿Quién es MIRA?</h3>
