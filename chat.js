@@ -2,7 +2,7 @@ const API_KEY = "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";
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 // Prompt positivo y didáctico
-const SYSTEM_PROMPT = 
+const SYSTEM_PROMPT = `
 Eres MIRA, una asistente virtual educativa creada por Innova Space y OpenAI.
 
 Responde siempre de forma clara, natural y ordenada, como ChatGPT. Utiliza títulos, listas, tablas y explicaciones sencillas.
@@ -18,7 +18,7 @@ Corrige errores ortográficos automáticamente. Si la pregunta es ambigua, inter
 Mantén el hilo de la conversación y responde a preguntas de seguimiento (“otro ejemplo”, “explícalo de nuevo”, etc.) teniendo en cuenta el contexto anterior.
 
 Responde siempre en español, a menos que el usuario indique otro idioma.
-;
+`;
 
 // Halo animado solo cuando habla
 function setAvatarTalking(isTalking) {
@@ -45,7 +45,7 @@ function showThinking() {
   const thinking = document.createElement("div");
   thinking.id = "thinking";
   thinking.className = "text-purple-300 italic";
-  thinking.innerHTML = <span class="animate-pulse">MIRA está pensando<span class="animate-bounce">...</span></span>;
+  thinking.innerHTML = `<span class="animate-pulse">MIRA está pensando<span class="animate-bounce">...</span></span>`;
   chatBox.appendChild(thinking);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -57,7 +57,7 @@ function plainTextForVoice(markdown) {
     .filter(line =>
       !line.trim().startsWith('$$') && !line.trim().endsWith('$$') && // No fórmulas centradas
       !line.includes('$') && // No fórmulas inline
-      !/^ {0,3}/.test(line) // No bloques de código
+      !/^ {0,3}`/.test(line) // No bloques de código
     )
     .join('. ') // Une cada línea con punto y espacio para mejorar pausas
     .replace(/\*\*([^*]+)\*\*/g, '$1')  // Quita negritas
@@ -130,7 +130,7 @@ async function sendMessage() {
   const userMessage = input.value.trim();
   if (!userMessage) return;
 
-  chatBox.innerHTML += <div><strong>Tú:</strong> ${escapeHtml(userMessage)}</div>;
+  chatBox.innerHTML += `<div><strong>Tú:</strong> ${escapeHtml(userMessage)}</div>`;
   input.value = "";
   showThinking();
 
@@ -146,7 +146,7 @@ async function sendMessage() {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": Bearer ${API_KEY},
+        "Authorization": `Bearer ${API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -172,7 +172,7 @@ async function sendMessage() {
         aiReply = "Soy MIRA, una asistente virtual creada por Innova Space y OpenAI. Estoy diseñada para ayudarte a aprender y resolver tus dudas de manera clara, amigable y personalizada, en todas las materias escolares. Puedes preguntarme sobre matemáticas, ciencias, historia, tecnología y mucho más.";
       } else {
         // Busca en Wikipedia
-        const wiki = await fetch(https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userMessage)});
+        const wiki = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userMessage)}`);
         const wikiData = await wiki.json();
         aiReply = wikiData.extract || "Lo siento, no encontré una respuesta adecuada.";
       }
@@ -183,12 +183,12 @@ async function sendMessage() {
 
     document.getElementById("thinking")?.remove();
     const html = renderMarkdown(aiReply);
-    chatBox.innerHTML += 
+    chatBox.innerHTML += `
       <div>
         <strong>MIRA:</strong>
         <span class="chat-markdown">${html}</span>
       </div>
-    ;
+    `;
     chatBox.scrollTop = chatBox.scrollHeight;
 
     speak(aiReply);
@@ -197,7 +197,7 @@ async function sendMessage() {
 
   } catch (error) {
     document.getElementById("thinking")?.remove();
-    chatBox.innerHTML += <div><strong>MIRA:</strong> Error al conectar con la IA.</div>;
+    chatBox.innerHTML += `<div><strong>MIRA:</strong> Error al conectar con la IA.</div>`;
     setAvatarTalking(false);
     console.error(error);
   }
