@@ -1,4 +1,10 @@
-// === VARIABLES Y ELEMENTOS ===
+// chat.js
+import { app, db } from "./firebase-config.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { collection, addDoc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { speak } from "./utils/speak.js";
+import { renderMessage } from "./utils/render.js";
+
 const chatContainer = document.getElementById("chat-container");
 const input = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
@@ -6,64 +12,17 @@ const avatar = document.getElementById("avatar");
 const typing = document.getElementById("typing-indicator");
 const fileInput = document.getElementById("image-upload");
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth();
-const db = getFirestore(app);
+const auth = getAuth(app);
+const API_KEY = "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";
 let currentUser = null;
 
-const API_KEY = "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";
-
-// === FUNCIONES DE CHAT ===
-function renderMessage(role, content) {
-  const msg = document.createElement("div");
-  msg.className = `message ${role === "user" ? "user" : "bot"}`;
-  msg.innerHTML = marked.parse(content);
-  chatContainer.appendChild(msg);
-  MathJax.typesetPromise();
-  msg.scrollIntoView({ behavior: "smooth", block: "start" });
-  if (role === "assistant") {
-    speak(content);
-    avatar.classList.add("talking");
-    setTimeout(() => avatar.classList.remove("talking"), 1200);
-  }
-}
-
-function speak(text) {
-  const cleaned = text.replace(/\$\$.*?\$\$/gs, "").replace(/\$.*?\$/g, "");
-  const msg = new SpeechSynthesisUtterance(cleaned);
-  msg.lang = "es-ES";
-  speechSynthesis.cancel();
-  speechSynthesis.speak(msg);
-}
-
-async function saveMessage(role, content) {
-  if (!currentUser) return;
-  await addDoc(collection(db, "chats", currentUser.uid, "mensajes"), {
-    role,
-    content,
-    timestamp: Date.now(),
-  });
-}
-
-async function loadMessages() {
-  if (!currentUser) return;
-  const q = query(collection(db, "chats", currentUser.uid, "mensajes"), orderBy("timestamp"));
-  const querySnapshot = await getDocs(q);
-  querySnapshot.forEach(doc => {
-    const { role, content } = doc.data();
-    renderMessage(role, content);
-  });
-}
-
-// === ENVÍO Y RESPUESTA ===
 sendBtn.onclick = () => handleSend();
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter") handleSend();
+input.addEventListener("keydown", e => e.key === "Enter" && handleSend());
+
+onAuthStateChanged(auth, async user => {
+  if (!user) return (window.location.href = "login.html");
+  currentUser = user;
+  await loadMessages();
 });
 
 async function handleSend() {
@@ -89,11 +48,7 @@ async function getResponse(prompt) {
         Authorization: `Bearer ${API_KEY}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        model: "meta-llama/llama-4-scout-17b-16e-instruct",
-        messages,
-        temperature: 0.7
-      })
+      body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", messages, temperature: 0.7 })
     });
 
     const data = await res.json();
@@ -107,25 +62,43 @@ async function getResponse(prompt) {
   }
 }
 
-// === MOVER AVATAR ===
-avatar.addEventListener("mousedown", startDrag);
-function startDrag(e) {
-  const offsetX = e.clientX - avatar.offsetLeft;
-  const offsetY = e.clientY - avatar.offsetTop;
-  function drag(e) {
-    avatar.style.left = `${e.clientX - offsetX}px`;
-    avatar.style.top = `${e.clientY - offsetY}px`;
-  }
-  function stopDrag() {
-    document.removeEventListener("mousemove", drag);
-    document.removeEventListener("mouseup", stopDrag);
-  }
-  document.addEventListener("mousemove", drag);
-  document.addEventListener("mouseup", stopDrag);
+async function saveMessage(role, content) {
+  if (!currentUser) return;
+  await addDoc(collection(db, "chats", currentUser.uid, "mensajes"), {
+    role,
+    content,
+    timestamp: Date.now()
+  });
 }
 
-// === CARGA DE IMÁGENES ===
-fileInput?.addEventListener("change", async e => {
+async function loadMessages() {
+  if (!currentUser) return;
+  const q = query(collection(db, "chats", currentUser.uid, "mensajes"), orderBy("timestamp"));
+  const querySnapshot = await getDocs(q);
+  querySnapshot.forEach(doc => {
+    const { role, content } = doc.data();
+    renderMessage(role, content);
+  });
+}
+
+// Drag avatar
+avatar?.addEventListener("mousedown", e => {
+  const offsetX = e.clientX - avatar.offsetLeft;
+  const offsetY = e.clientY - avatar.offsetTop;
+  const drag = e => {
+    avatar.style.left = `${e.clientX - offsetX}px`;
+    avatar.style.top = `${e.clientY - offsetY}px`;
+  };
+  const stop = () => {
+    document.removeEventListener("mousemove", drag);
+    document.removeEventListener("mouseup", stop);
+  };
+  document.addEventListener("mousemove", drag);
+  document.addEventListener("mouseup", stop);
+});
+
+// File upload
+fileInput?.addEventListener("change", e => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -135,14 +108,4 @@ fileInput?.addEventListener("change", async e => {
     saveMessage("user", "[Imagen cargada]");
   };
   reader.readAsDataURL(file);
-});
-
-// === AUTENTICACIÓN ===
-onAuthStateChanged(auth, user => {
-  if (user) {
-    currentUser = user;
-    loadMessages();
-  } else {
-    window.location.href = "login.html";
-  }
 });
