@@ -1,7 +1,6 @@
 // backend/server.js
 require('dotenv').config();
 const express = require('express');
-const fetch = require('node-fetch'); // Si usas Node v18+, puedes eliminar esta línea y usar fetch global
 const cors = require('cors');
 
 const app = express();
