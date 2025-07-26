@@ -1,83 +1,142 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MIRA AI - Innova Space</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body class="bg-gradient-to-br from-black via-indigo-900 to-purple-900 text-white font-sans scroll-smooth">
-  <div class="flex flex-col items-center p-4">
-    <!-- Subida de imagen -->
-    <div class="w-full max-w-xl mb-4">
-      <label class="block text-sm font-medium text-purple-300">Sube una imagen para que MIRA la analice</label>
-      <input type="file" accept="image/*" onchange="analyzeImage(event)"
-        class="mt-2 text-sm text-purple-100 bg-purple-700 file:bg-purple-500 file:text-white file:px-3 file:py-1 file:rounded-md file:border-none rounded-md border border-purple-400 p-1 w-full" />
-    </div>
+const API_KEY = "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";
+const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
-    <!-- Chat -->
-    <div id="chat-box" class="w-full max-w-3xl space-y-3 mb-16 px-2"></div>
+const SYSTEM_PROMPT = `
+Eres MIRA, una asistente virtual educativa creada por Innova Space y OpenAI.
+Responde de forma clara, ordenada y didáctica para estudiantes de educación escolar.
+Corrige errores ortográficos y explica con ejemplos siempre que sea posible.
+Usa Markdown y LaTeX para fórmulas si es necesario, pero habla siempre en español.
+`;
 
-    <!-- Input de usuario -->
-    <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-80 px-4 py-3 flex items-center justify-center space-x-2">
-      <input id="user-input" type="text" placeholder="Escribe tu mensaje..."
-        class="w-full max-w-3xl p-3 rounded-lg text-black" />
-      <button id="send-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">
-        Enviar
-      </button>
-    </div>
-  </div>
+const chatHistory = [{ role: "system", content: SYSTEM_PROMPT }];
 
-  <!-- AVATAR flotante -->
-  <img id="avatar-mira" src="avatar-mira.svg" class="fixed bottom-24 right-4 z-50 cursor-pointer" title="MIRA" />
+function setAvatarTalking(isTalking) {
+  const avatar = document.getElementById("avatar-mira");
+  if (!avatar) return;
+  if (isTalking) {
+    avatar.classList.add("pulse");
+  } else {
+    avatar.classList.remove("pulse");
+  }
+}
 
-  <!-- Scripts -->
-  <script src="chat.js"></script>
-  <script src="speak.js"></script>
+function speak(text) {
+  try {
+    const plain = text.replace(/(<([^>]+)>)/gi, ""); // quitar HTML
+    const msg = new SpeechSynthesisUtterance(plain);
+    msg.lang = "es-ES";
+    window.speechSynthesis.cancel();
+    setAvatarTalking(true);
+    msg.onend = () => setAvatarTalking(false);
+    window.speechSynthesis.speak(msg);
+  } catch (err) {
+    console.error("Error al hablar:", err);
+    setAvatarTalking(false);
+  }
+}
 
-  <!-- Lógica de análisis de imágenes -->
-  <script>
-    async function analyzeImage(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, (m) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
+}
 
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Image = reader.result.split(',')[1];
-        const choice = confirm("¿Quieres extraer texto de la imagen (OCR)?\nPresiona Cancelar para obtener descripción IA.");
+function renderMarkdown(text) {
+  return marked.parse(text);
+}
 
-        const url = choice
-          ? "https://api.ocr.space/parse/image"
-          : "http://localhost:3001/api/blip";
+function showThinking() {
+  const chatBox = document.getElementById("chat-box");
+  const thinking = document.createElement("div");
+  thinking.id = "thinking";
+  thinking.className = "text-purple-300 italic";
+  thinking.innerHTML = `<span class="animate-pulse">MIRA está pensando<span class="animate-bounce">...</span></span>`;
+  chatBox.appendChild(thinking);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
 
-        const headers = choice
-          ? { apikey: "K82378316388957", "Content-Type": "application/x-www-form-urlencoded" }
-          : { "Content-Type": "application/json" };
+async function sendMessage() {
+  const input = document.getElementById("user-input");
+  const chatBox = document.getElementById("chat-box");
+  const userMessage = input.value.trim();
+  if (!userMessage) return;
 
-        const body = choice
-          ? new URLSearchParams({ base64Image: `data:image/png;base64,${base64Image}` }).toString()
-          : JSON.stringify({ inputs: `data:image/png;base64,${base64Image}` });
+  chatBox.innerHTML += `<div><strong>Tú:</strong> ${escapeHtml(userMessage)}</div>`;
+  input.value = "";
+  showThinking();
 
-        try {
-          const res = await fetch(url, { method: "POST", headers, body });
-          const result = await res.json();
+  chatHistory.push({ role: "user", content: userMessage });
 
-          const text = choice
-            ? result.ParsedResults?.[0]?.ParsedText || "No se pudo leer texto."
-            : result?.generated_text || "No se pudo generar descripción.";
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: chatHistory,
+        temperature: 0.7
+      })
+    });
 
-          mostrarRespuestaImagen(text);
-        } catch (e) {
-          console.error("Error al analizar imagen:", e);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    const data = await res.json();
+    let aiReply = data.choices?.[0]?.message?.content || "Lo siento, no encontré una respuesta.";
 
-    function mostrarRespuestaImagen(text) {
+    chatHistory.push({ role: "assistant", content: aiReply });
+
+    document.getElementById("thinking")?.remove();
+    const html = renderMarkdown(aiReply);
+    chatBox.innerHTML += `<div><strong>MIRA:</strong><span class="chat-markdown">${html}</span></div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+    speak(aiReply);
+    if (window.MathJax) MathJax.typesetPromise();
+
+  } catch (error) {
+    document.getElementById("thinking")?.remove();
+    chatBox.innerHTML += `<div><strong>MIRA:</strong> Error al conectar con la IA.</div>`;
+    console.error("Error al conectar:", error);
+  }
+}
+
+// Activar botón y Enter
+document.getElementById("send-btn").addEventListener("click", sendMessage);
+document.getElementById("user-input").addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    sendMessage();
+  }
+});
+
+// Función para analizar imagen (OCR o BLIP)
+async function analyzeImage(mode) {
+  const file = document.getElementById("image-input").files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onloadend = async () => {
+    const base64Image = reader.result.split(',')[1];
+    const url = mode === "ocr"
+      ? "https://api.ocr.space/parse/image"
+      : "http://localhost:3001/api/blip";
+
+    const headers = mode === "ocr"
+      ? { apikey: "K82378316388957", "Content-Type": "application/x-www-form-urlencoded" }
+      : { "Content-Type": "application/json" };
+
+    const body = mode === "ocr"
+      ? new URLSearchParams({ base64Image: `data:image/png;base64,${base64Image}` }).toString()
+      : JSON.stringify({ inputs: `data:image/png;base64,${base64Image}` });
+
+    try {
+      const res = await fetch(url, { method: "POST", headers, body });
+      const result = await res.json();
+
+      const text = mode === "ocr"
+        ? result.ParsedResults?.[0]?.ParsedText || "No se pudo leer texto."
+        : result?.generated_text || "No se pudo generar descripción.";
+
       const chatBox = document.getElementById("chat-box");
       const div = document.createElement("div");
       div.innerHTML = `
@@ -86,21 +145,10 @@
         </div>`;
       chatBox.appendChild(div);
       chatBox.scrollTop = chatBox.scrollHeight;
-      if (typeof speak === "function") speak(text);
+      speak(text);
+    } catch (e) {
+      console.error("Error al analizar imagen:", e);
     }
-
-    // Activar envío por botón
-    document.getElementById("send-btn").addEventListener("click", () => {
-      sendMessage();
-    });
-
-    // Activar envío por Enter
-    document.getElementById("user-input").addEventListener("keydown", function (event) {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        sendMessage();
-      }
-    });
-  </script>
-</body>
-</html>
+  };
+  reader.readAsDataURL(file);
+}
