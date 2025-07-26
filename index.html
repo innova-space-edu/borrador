@@ -16,6 +16,64 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    #avatar-mira {
+      display: inline-block;
+      vertical-align: middle;
+      width: 60px;
+      height: 60px;
+      margin-left: 15px;
+      margin-bottom: 8px;
+      transition: filter 0.3s, opacity 0.3s;
+      opacity: 1;
+      filter: grayscale(0.4) brightness(0.8);
+      position: fixed;
+      top: 1.4rem;
+      right: 1rem;
+      z-index: 50;
+      cursor: grab;
+    }
+    #avatar-mira.pulse {
+      animation: halo-glow 1.2s infinite alternate;
+      filter: drop-shadow(0 0 16px #a855f7) brightness(1.25);
+      opacity: 1;
+    }
+    @keyframes halo-glow {
+      from { filter: drop-shadow(0 0 12px #4f46e5) brightness(1.18); }
+      to   { filter: drop-shadow(0 0 36px #38bdf8) brightness(1.45); }
+    }
+    #mira-info {
+      z-index: 50;
+      box-shadow: 0 6px 32px #23104a;
+      border-radius: 1.2rem;
+      background: #232146;
+      border: 2px solid #a855f7;
+      color: #fff;
+      max-width: 420px;
+      width: 92vw;
+      padding: 2.1rem 1.3rem 1.3rem 1.3rem;
+      text-align: center;
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%,-50%);
+      display: none;
+      transition: opacity .2s;
+    }
+    #mira-info h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    #mira-info button {
+      margin-top: 1.5rem;
+      background: #a855f7;
+      color: #fff;
+      padding: 0.5rem 1.3rem;
+      border-radius: 0.6rem;
+      font-weight: 500;
+    }
+  </style>
 </head>
 <body class="bg-gradient-to-br from-black via-indigo-900 to-purple-900 text-white font-sans scroll-smooth">
 
@@ -27,12 +85,11 @@
     <p class="text-lg text-gray-300 mt-3">Educación del futuro. Conectando estudiantes con IA.</p>
   </section>
 
-  <!-- Asistente IA y Avatar -->
+  <!-- Asistente IA -->
   <section class="pt-12 pb-10 px-4 relative">
     <div class="max-w-3xl mx-auto relative mt-4">
       <div class="flex items-center justify-center mb-8">
         <h2 class="text-4xl font-bold text-center mb-0">Asistente IA - MIRA</h2>
-        <object id="avatar-mira" type="image/svg+xml" data="avatar_mira.svg" class="still" tabindex="-1" aria-hidden="true"></object>
       </div>
 
       <!-- Contenedor del chat -->
@@ -120,6 +177,8 @@
     </div>
   </div>
 
+  <img id="avatar-mira" src="avatar-mira.svg" title="MIRA" />
+
   <script>
     function toggleMiraInfo() {
       const info = document.getElementById("mira-info");
@@ -129,6 +188,23 @@
       const list = document.getElementById("areas-list");
       list.classList.toggle("hidden");
     }
+    // Movimiento flotante del avatar
+    const mira = document.getElementById("avatar-mira");
+    let isDragging = false;
+    mira.addEventListener("mousedown", e => {
+      isDragging = true;
+      mira.style.cursor = "grabbing";
+    });
+    document.addEventListener("mouseup", () => {
+      isDragging = false;
+      mira.style.cursor = "grab";
+    });
+    document.addEventListener("mousemove", e => {
+      if (isDragging) {
+        mira.style.left = `${e.clientX - mira.offsetWidth / 2}px`;
+        mira.style.top = `${e.clientY - mira.offsetHeight / 2}px`;
+      }
+    });
   </script>
   <script src="chat.js"></script>
   <script src="speak.js"></script>
