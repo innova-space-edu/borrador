@@ -157,13 +157,18 @@
             <strong>MIRA (imagen):</strong> ${text}
           </div>`;
           chatBox.appendChild(div);
+          speakText(text); // <-- Reproduce la voz automáticamente
         } else {
           alert("Resultado:\n" + text);
+          speakText(text);
         }
       };
       reader.readAsDataURL(file);
     }
   </script>
+
+  <!-- Archivos de scripts -->
   <script src="chat.js"></script>
+  <script src="speak.js"></script>
 </body>
 </html>
