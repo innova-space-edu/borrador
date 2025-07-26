@@ -16,6 +16,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
+    /* Tu estilo existente intacto */
     #avatar-mira {
       display: inline-block;
       vertical-align: middle;
@@ -106,48 +107,63 @@
     }
   </style>
 </head>
+
 <body class="bg-gradient-to-br from-black via-indigo-900 to-purple-900 text-white font-sans scroll-smooth">
 
-<!-- (contenido existente sin cambios aquí) -->
+  <!-- Aquí va el contenido existente de tu página -->
+  <!-- AÑADE ESTO DONDE QUIERAS MOSTRAR EL INPUT DE IMAGEN -->
 
-<!-- Agregar scripts para análisis de imágenes -->
-<script>
-  async function analyzeImage(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+  <div class="w-full flex justify-center mt-6">
+    <label class="block text-sm font-medium text-purple-300">Sube una imagen para analizar</label>
+  </div>
+  <div class="w-full flex justify-center mt-2 mb-6">
+    <input type="file" accept="image/*" onchange="analyzeImage(event)"
+           class="text-sm text-purple-100 bg-purple-700 file:bg-purple-500 file:text-white file:px-3 file:py-1 file:rounded-md file:border-none rounded-md border border-purple-400 p-1 max-w-xs" />
+  </div>
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Image = reader.result.split(',')[1];
-      const choice = confirm("¿Quieres extraer texto de la imagen (OCR)?\nPresiona Cancelar para obtener descripción IA.");
-      const url = choice
-        ? "https://api.ocr.space/parse/image"
-        : "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base";
+  <!-- Scripts -->
+  <script>
+    async function analyzeImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-      const headers = choice
-        ? { apikey: "K82378316388957", "Content-Type": "application/x-www-form-urlencoded" }
-        : { Authorization: "Bearer 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" };
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Image = reader.result.split(',')[1];
+        const choice = confirm("¿Quieres extraer texto de la imagen (OCR)?\nPresiona Cancelar para obtener descripción IA.");
+        const url = choice
+          ? "https://api.ocr.space/parse/image"
+          : "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base";
 
-      const body = choice
-        ? new URLSearchParams({ base64Image: `data:image/png;base64,${base64Image}` }).toString()
-        : JSON.stringify({ inputs: `data:image/png;base64,${base64Image}` });
+        const headers = choice
+          ? { apikey: "K82378316388957", "Content-Type": "application/x-www-form-urlencoded" }
+          : { Authorization: "Bearer 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" };
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body
-      });
+        const body = choice
+          ? new URLSearchParams({ base64Image: `data:image/png;base64,${base64Image}` }).toString()
+          : JSON.stringify({ inputs: `data:image/png;base64,${base64Image}` });
 
-      const result = await res.json();
-      const text = choice
-        ? result.ParsedResults?.[0]?.ParsedText || "No se pudo leer texto."
-        : result?.[0]?.generated_text || "No se pudo generar descripción.";
+        const res = await fetch(url, { method: "POST", headers, body });
+        const result = await res.json();
 
-      document.getElementById("chat-box").innerHTML += `<div><strong>MIRA (imagen):</strong> ${text}</div>`;
-    };
-    reader.readAsDataURL(file);
-  }
-</script>
-<script src="chat.js"></script>
+        const text = choice
+          ? result.ParsedResults?.[0]?.ParsedText || "No se pudo leer texto."
+          : result?.[0]?.generated_text || "No se pudo generar descripción.";
+
+        const chatBox = document.getElementById("chat-box");
+        if (chatBox) {
+          const div = document.createElement("div");
+          div.innerHTML = `<div class="bg-purple-800 text-white p-3 rounded-xl mb-2 max-w-2xl mx-auto">
+            <strong>MIRA (imagen):</strong> ${text}
+          </div>`;
+          chatBox.appendChild(div);
+        } else {
+          alert("Resultado:\n" + text);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  </script>
+  <script src="chat.js"></script>
 </body>
 </html>
