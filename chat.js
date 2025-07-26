@@ -179,7 +179,6 @@ async function analyzeImage(event) {
     chatBox.innerHTML += `<div id="thinking" class="text-purple-300 italic">MIRA está analizando la imagen...</div>`;
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // Paso 1: OCR
     try {
       const ocrRes = await fetch("https://api.ocr.space/parse/image", {
         method: "POST",
@@ -201,7 +200,6 @@ async function analyzeImage(event) {
         return;
       }
 
-      // Paso 2: Visión por IA con Hugging Face
       chatBox.innerHTML += `<div class="text-purple-300">No detecté texto. Intentando analizar visualmente...</div>`;
 
       const hfVision = await fetch("https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base", {
