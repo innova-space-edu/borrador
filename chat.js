@@ -3,20 +3,12 @@ const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 const SYSTEM_PROMPT = `
 Eres MIRA, una asistente virtual educativa creada por Innova Space y OpenAI.
-
-Responde siempre de forma clara, natural y ordenada, como ChatGPT. Utiliza títulos, listas, tablas y explicaciones sencillas.
-
-Cuando te pidan una fórmula, ecuación o función:
+Explica siempre de forma clara, natural y ordenada, como ChatGPT. Utiliza títulos, listas, tablas y explicaciones sencillas.
+Cuando presentes una fórmula, ecuación o función:
 - Explica primero con una frase sencilla y clara lo que representa esa fórmula.
-- Después, muestra la fórmula escrita en LaTeX para que se vea ordenada y bonita.
-
-Al explicar el significado de cada variable, escribe el nombre y su significado en texto simple, así el usuario lo puede leer y escuchar fácilmente (ejemplo: v_m es la velocidad media).
-
-Haz las explicaciones lo más comprensibles y didácticas posible, como para estudiantes de secundaria.
-Corrige errores ortográficos automáticamente. Si la pregunta es ambigua, interpreta o pide aclaración.
-Mantén el hilo de la conversación y responde a preguntas de seguimiento (“otro ejemplo”, “explícalo de nuevo”, etc.) teniendo en cuenta el contexto anterior.
-
-Responde siempre en español, a menos que el usuario indique otro idioma.
+- Luego muestra la fórmula en LaTeX (usa $$).
+- Después, explica el significado de cada variable en texto simple, así el usuario lo puede leer y escuchar fácilmente (ejemplo: v_m es la velocidad media).
+Incluye ejemplos cuando sea útil. Corrige errores ortográficos automáticamente. Si la pregunta es ambigua, interpreta o pide aclaración. Mantén el hilo de la conversación y responde a preguntas de seguimiento considerando el contexto anterior. Responde siempre en español, salvo que el usuario pida otro idioma.
 `;
 
 const chatHistory = [{ role: "system", content: SYSTEM_PROMPT }];
@@ -33,7 +25,7 @@ function setAvatarTalking(isTalking) {
 
 function speak(text) {
   try {
-    const plain = text.replace(/(<([^>]+)>)/gi, ""); // quitar HTML
+    const plain = text.replace(/(<([^>]+)>)/gi, "");
     const msg = new SpeechSynthesisUtterance(plain);
     msg.lang = "es-ES";
     window.speechSynthesis.cancel();
@@ -120,10 +112,29 @@ document.getElementById("user-input").addEventListener("keydown", function (even
   }
 });
 
-// Función para analizar imagen (OCR o BLIP)
+// === Mejoras: Interpretación visual para imágenes ===
+function interpretarDescripcion(desc, mode) {
+  desc = desc.trim();
+  if (mode === "ocr") {
+    if (desc.length < 10) return "No se encontró texto relevante en la imagen. ¿Quieres probar con otra?";
+    if (desc.match(/herramientas?|archivos?|agregar/i)) return "La imagen parece mostrar opciones para agregar archivos o herramientas.";
+    if (desc.match(/matemáticas?|ejercicio|problema|números?|operación/i)) return "La imagen contiene ejercicios o problemas matemáticos. ¿Quieres que resuelva alguno?";
+    return `Texto extraído: ${desc}`;
+  }
+  if (desc.match(/screenshot|captura/i)) return "La imagen parece ser una captura de pantalla. ¿Quieres que explique lo que se ve?";
+  if (desc.match(/list|lista|option|opción|herramienta|tool/i)) return "La imagen parece mostrar una lista de herramientas u opciones.";
+  if (desc.match(/math|formula|ecuación|number|número/i)) return "Veo operaciones matemáticas o fórmulas. ¿Te gustaría que resuelva algún ejercicio?";
+  if (desc.length < 5) return "No pude identificar la imagen. Puedes intentar con otra más clara.";
+  return desc;
+}
+
+// ==== Función para analizar imagen (OCR o BLIP seguro) ====
 async function analyzeImage(mode) {
   const file = document.getElementById("image-input").files[0];
   if (!file) return;
+
+  const chatBox = document.getElementById("chat-box");
+  showThinking();
 
   const reader = new FileReader();
   reader.onloadend = async () => {
@@ -146,18 +157,24 @@ async function analyzeImage(mode) {
 
       const text = mode === "ocr"
         ? result.ParsedResults?.[0]?.ParsedText || "No se pudo leer texto."
-        : result?.generated_text || "No se pudo generar descripción.";
+        : result?.generated_text || result?.[0]?.generated_text || "No se pudo generar descripción.";
 
-      const chatBox = document.getElementById("chat-box");
+      document.getElementById("thinking")?.remove();
+
+      // Interpretar y sugerir
+      const sugerencia = interpretarDescripcion(text, mode);
       const div = document.createElement("div");
       div.innerHTML = `
         <div class="bg-purple-800 text-white p-4 rounded-xl shadow-lg max-w-2xl mx-auto">
-          <strong>🖼️ MIRA (imagen):</strong><br>${text}
+          <strong>🖼️ MIRA (imagen):</strong><br>${sugerencia}
         </div>`;
       chatBox.appendChild(div);
       chatBox.scrollTop = chatBox.scrollHeight;
-      speak(text);
+      speak(sugerencia);
+
     } catch (e) {
+      document.getElementById("thinking")?.remove();
+      chatBox.innerHTML += `<div class="text-red-400">Error al analizar imagen: ${e.message || e}</div>`;
       console.error("Error al analizar imagen:", e);
     }
   };
