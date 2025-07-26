@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Innova Space Education</title>
+
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-P64ZZSCZ7Z"></script>
   <script>
@@ -12,9 +13,11 @@
     gtag('js', new Date());
     gtag('config', 'G-P64ZZSCZ7Z');
   </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
   <style>
     #avatar-mira {
       display: inline-block;
@@ -116,7 +119,7 @@
            class="mt-2 text-sm text-purple-100 bg-purple-700 file:bg-purple-500 file:text-white file:px-3 file:py-1 file:rounded-md file:border-none rounded-md border border-purple-400 p-1 max-w-xs" />
   </div>
 
-  <!-- AQUÍ DEBE IR EL CHAT -->
+  <!-- CAJA DE CHAT -->
   <div id="chat-box" class="px-4 max-w-3xl mx-auto mb-16 space-y-3">
     <!-- Mensajes aquí -->
   </div>
