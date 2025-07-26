@@ -24,15 +24,15 @@
     <!-- Input de usuario -->
     <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-80 px-4 py-3 flex items-center justify-center space-x-2">
       <input id="user-input" type="text" placeholder="Escribe tu mensaje..."
-        class="w-full max-w-3xl p-3 rounded-lg text-black" onkeydown="if(event.key==='Enter') sendMessage()" />
-      <button onclick="sendMessage()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">
+        class="w-full max-w-3xl p-3 rounded-lg text-black" />
+      <button id="send-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">
         Enviar
       </button>
     </div>
   </div>
 
   <!-- AVATAR flotante -->
-  <img id="avatar-mira" src="avatar-mira.svg" class="fixed bottom-24 right-4 z-50 pulse cursor-pointer" title="MIRA" />
+  <img id="avatar-mira" src="avatar-mira.svg" class="fixed bottom-24 right-4 z-50 cursor-pointer" title="MIRA" />
 
   <!-- Scripts -->
   <script src="chat.js"></script>
@@ -88,6 +88,19 @@
       chatBox.scrollTop = chatBox.scrollHeight;
       if (typeof speak === "function") speak(text);
     }
+
+    // Activar envío por botón
+    document.getElementById("send-btn").addEventListener("click", () => {
+      sendMessage();
+    });
+
+    // Activar envío por Enter
+    document.getElementById("user-input").addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
   </script>
 </body>
 </html>
