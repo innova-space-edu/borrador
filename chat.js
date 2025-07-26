@@ -3,129 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Innova Space Education</title>
-
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-P64ZZSCZ7Z"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-P64ZZSCZ7Z');
-  </script>
-
-  <!-- Estilos -->
+  <title>MIRA AI - Innova Space</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
-  <style>
-    #avatar-mira {
-      display: inline-block;
-      vertical-align: middle;
-      width: 60px;
-      height: 60px;
-      margin-left: 15px;
-      margin-bottom: 8px;
-      transition: filter 0.3s, opacity 0.3s;
-      opacity: 1;
-      filter: grayscale(0.4) brightness(0.8);
-    }
-    #avatar-mira.pulse {
-      animation: halo-glow 1.2s infinite alternate;
-      filter: drop-shadow(0 0 16px #a855f7) brightness(1.25);
-      opacity: 1;
-    }
-    @keyframes halo-glow {
-      from { filter: drop-shadow(0 0 12px #4f46e5) brightness(1.18); }
-      to   { filter: drop-shadow(0 0 36px #38bdf8) brightness(1.45); }
-    }
-    @media (max-width: 600px) {
-      #avatar-mira { width: 40px; height: 40px; margin-left: 5px; }
-      #chat-box { font-size: 0.96rem;}
-      .max-w-3xl { max-width: 98vw;}
-    }
-    .chat-markdown table {
-      border-collapse: collapse; margin: 0.5em 0;
-      width: 100%;
-      background: #22223b;
-      color: #fafafa;
-      font-size: 0.97rem;
-    }
-    .chat-markdown th, .chat-markdown td {
-      border: 1px solid #7f5af0;
-      padding: 6px 10px;
-      text-align: left;
-    }
-    .chat-markdown th { background: #4f378b; }
-    mjx-container[jax="CHTML"] {
-      font-size: 1.25em;
-      background: transparent !important;
-      padding: 0.12em 0.2em;
-      margin: 0.35em 0;
-    }
-    .credits {
-      font-size: 1.1em;
-      color: #bbcbff;
-      text-align: center;
-      padding-bottom: 2em;
-      opacity: 0.85;
-      letter-spacing: 0.03em;
-    }
-    .credits strong {
-      color: #fff;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-    }
-    #mira-info {
-      z-index: 50;
-      box-shadow: 0 6px 32px #23104a;
-      border-radius: 1.2rem;
-      background: #232146;
-      border: 2px solid #a855f7;
-      color: #fff;
-      max-width: 420px;
-      width: 92vw;
-      padding: 2.1rem 1.3rem 1.3rem 1.3rem;
-      text-align: center;
-      position: fixed;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%,-50%);
-      display: none;
-      transition: opacity .2s;
-    }
-    #mira-info h3 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-    #mira-info button {
-      margin-top: 1.5rem;
-      background: #a855f7;
-      color: #fff;
-      padding: 0.5rem 1.3rem;
-      border-radius: 0.6rem;
-      font-weight: 500;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body class="bg-gradient-to-br from-black via-indigo-900 to-purple-900 text-white font-sans scroll-smooth">
+  <div class="flex flex-col items-center p-4">
+    <!-- Subida de imagen -->
+    <div class="w-full max-w-xl mb-4">
+      <label class="block text-sm font-medium text-purple-300">Sube una imagen para que MIRA la analice</label>
+      <input type="file" accept="image/*" onchange="analyzeImage(event)"
+        class="mt-2 text-sm text-purple-100 bg-purple-700 file:bg-purple-500 file:text-white file:px-3 file:py-1 file:rounded-md file:border-none rounded-md border border-purple-400 p-1 w-full" />
+    </div>
 
-  <!-- INPUT PARA SUBIR IMAGEN -->
-  <div class="w-full flex flex-col items-center mt-6 mb-4">
-    <label class="block text-sm font-medium text-purple-300">Sube una imagen para que MIRA la analice</label>
-    <input type="file" accept="image/*" onchange="analyzeImage(event)"
-           class="mt-2 text-sm text-purple-100 bg-purple-700 file:bg-purple-500 file:text-white file:px-3 file:py-1 file:rounded-md file:border-none rounded-md border border-purple-400 p-1 max-w-xs" />
+    <!-- Chat -->
+    <div id="chat-box" class="w-full max-w-3xl space-y-3 mb-16 px-2"></div>
+
+    <!-- Input de usuario -->
+    <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-80 px-4 py-3 flex items-center justify-center space-x-2">
+      <input id="user-input" type="text" placeholder="Escribe tu mensaje..."
+        class="w-full max-w-3xl p-3 rounded-lg text-black" onkeydown="if(event.key==='Enter') sendMessage()" />
+      <button onclick="sendMessage()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">
+        Enviar
+      </button>
+    </div>
   </div>
 
-  <!-- CHAT -->
-  <div id="chat-box" class="px-4 max-w-3xl mx-auto mb-16 space-y-3">
-    <!-- Mensajes aquí -->
-  </div>
+  <!-- AVATAR flotante -->
+  <img id="avatar-mira" src="avatar-mira.svg" class="fixed bottom-24 right-4 z-50 pulse cursor-pointer" title="MIRA" />
 
-  <!-- SCRIPT DE ANÁLISIS DE IMÁGENES -->
+  <!-- Scripts -->
+  <script src="chat.js"></script>
+  <script src="speak.js"></script>
+
+  <!-- Lógica de análisis de imágenes -->
   <script>
     async function analyzeImage(event) {
       const file = event.target.files[0];
@@ -135,6 +48,7 @@
       reader.onloadend = async () => {
         const base64Image = reader.result.split(',')[1];
         const choice = confirm("¿Quieres extraer texto de la imagen (OCR)?\nPresiona Cancelar para obtener descripción IA.");
+
         const url = choice
           ? "https://api.ocr.space/parse/image"
           : "http://localhost:3001/api/blip";
@@ -145,32 +59,35 @@
 
         const body = choice
           ? new URLSearchParams({ base64Image: `data:image/png;base64,${base64Image}` }).toString()
-          : JSON.stringify({ base64: base64Image });
+          : JSON.stringify({ inputs: `data:image/png;base64,${base64Image}` });
 
-        const res = await fetch(url, { method: "POST", headers, body });
-        const result = await res.json();
+        try {
+          const res = await fetch(url, { method: "POST", headers, body });
+          const result = await res.json();
 
-        const text = choice
-          ? result.ParsedResults?.[0]?.ParsedText || "No se pudo leer texto."
-          : result?.description || "No se pudo generar descripción.";
+          const text = choice
+            ? result.ParsedResults?.[0]?.ParsedText || "No se pudo leer texto."
+            : result?.generated_text || "No se pudo generar descripción.";
 
-        const chatBox = document.getElementById("chat-box");
-        const div = document.createElement("div");
-        div.innerHTML = `<div class="bg-purple-800 text-white p-4 rounded-xl shadow-lg">
-          <strong>🖼️ MIRA (imagen):</strong><br>${text}
-        </div>`;
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
-
-        // 🔊 Activar voz
-        if (typeof speak === "function") speak(text);
+          mostrarRespuestaImagen(text);
+        } catch (e) {
+          console.error("Error al analizar imagen:", e);
+        }
       };
       reader.readAsDataURL(file);
     }
-  </script>
 
-  <!-- ARCHIVOS JAVASCRIPT -->
-  <script src="speak.js"></script>
-  <script src="chat.js"></script>
+    function mostrarRespuestaImagen(text) {
+      const chatBox = document.getElementById("chat-box");
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <div class="bg-purple-800 text-white p-4 rounded-xl shadow-lg max-w-2xl mx-auto">
+          <strong>🖼️ MIRA (imagen):</strong><br>${text}
+        </div>`;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      if (typeof speak === "function") speak(text);
+    }
+  </script>
 </body>
 </html>
