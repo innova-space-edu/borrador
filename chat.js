@@ -1,230 +1,172 @@
-const API_KEY = "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";
-const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
-
-const SYSTEM_PROMPT = `
-Eres MIRA, una asistente virtual educativa creada por Innova Space y OpenAI.
-
-Responde siempre de forma clara, natural y ordenada, como ChatGPT. Utiliza títulos, listas, tablas y explicaciones sencillas.
-
-Cuando te pidan una fórmula, ecuación o función:
-- Explica primero con una frase sencilla y clara lo que representa esa fórmula.
-- Después, muestra la fórmula escrita en LaTeX para que se vea ordenada y bonita.
-
-Al explicar el significado de cada variable, escribe el nombre y su significado en texto simple, así el usuario lo puede leer y escuchar fácilmente (ejemplo: v_m es la velocidad media).
-
-Haz las explicaciones lo más comprensibles y didácticas posible, como para estudiantes de secundaria.
-Corrige errores ortográficos automáticamente. Si la pregunta es ambigua, interpreta o pide aclaración.
-Mantén el hilo de la conversación y responde a preguntas de seguimiento (“otro ejemplo”, “explícalo de nuevo”, etc.) teniendo en cuenta el contexto anterior.
-
-Responde siempre en español, a menos que el usuario indique otro idioma.
-`;
-
-function setAvatarTalking(isTalking) {
-  const avatar = document.getElementById("avatar-mira");
-  if (!avatar) return;
-  avatar.classList.toggle("pulse", isTalking);
-}
-
-document.getElementById("user-input").addEventListener("keydown", function (event) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    sendMessage();
-  }
-});
-
-function showThinking() {
-  const chatBox = document.getElementById("chat-box");
-  const thinking = document.createElement("div");
-  thinking.id = "thinking";
-  thinking.className = "text-purple-300 italic";
-  thinking.innerHTML = `<span class="animate-pulse">MIRA está pensando<span class="animate-bounce">...</span></span>`;
-  chatBox.appendChild(thinking);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function plainTextForVoice(markdown) {
-  let text = markdown
-    .split('\n')
-    .filter(line =>
-      !line.trim().startsWith('$$') &&
-      !line.trim().endsWith('$$') &&
-      !line.includes('$') &&
-      !/^ {0,3}`/.test(line)
-    )
-    .join('. ')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/__([^_]+)__/g, '$1')
-    .replace(/_([^_]+)_/g, '$1')
-    .replace(/([.,;:!?\)])([^\s.])/g, '$1 $2')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  return text.replace(/\.{2,}/g, '.').replace(/\. \./g, '. ');
-}
-
-function speak(text) {
-  try {
-    const plain = plainTextForVoice(text);
-    if (!plain) return;
-    const msg = new SpeechSynthesisUtterance(plain);
-    msg.lang = "es-ES";
-    window.speechSynthesis.cancel();
-    setAvatarTalking(true);
-    msg.onend = () => setAvatarTalking(false);
-    msg.onerror = () => setAvatarTalking(false);
-    window.speechSynthesis.speak(msg);
-  } catch {
-    setAvatarTalking(false);
-  }
-}
-
-function renderMarkdown(text) {
-  return marked.parse(text);
-}
-
-function escapeHtml(text) {
-  return text.replace(/[&<>"']/g, m => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  })[m]);
-}
-
-const chatHistory = [
-  { role: "system", content: SYSTEM_PROMPT }
-];
-
-window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    speak("¡Hola! Soy MIRA, tu asistente virtual. ¿En qué puedo ayudarte hoy?");
-    setAvatarTalking(false);
-  }, 900);
-});
-
-async function sendMessage() {
-  const input = document.getElementById("user-input");
-  const chatBox = document.getElementById("chat-box");
-  const userMessage = input.value.trim();
-  if (!userMessage) return;
-
-  chatBox.innerHTML += `<div><strong>Tú:</strong> ${escapeHtml(userMessage)}</div>`;
-  input.value = "";
-  showThinking();
-
-  chatHistory.push({ role: "user", content: userMessage });
-  if (chatHistory.length > 9) chatHistory.splice(1, chatHistory.length - 8);
-
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: chatHistory,
-        temperature: 0.7
-      })
-    });
-
-    const data = await response.json();
-    let aiReply = data.choices?.[0]?.message?.content || "";
-
-    if (!aiReply || aiReply.toLowerCase().includes("no se pudo") || aiReply.toLowerCase().includes("no encontré")) {
-      if (/quien eres|qué puedes hacer|presentate/.test(userMessage.toLowerCase())) {
-        aiReply = "Soy MIRA, una asistente virtual creada por Innova Space y OpenAI. Estoy diseñada para ayudarte a aprender y resolver tus dudas de manera clara, amigable y personalizada.";
-      } else {
-        const wiki = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userMessage)}`);
-        const wikiData = await wiki.json();
-        aiReply = wikiData.extract || "Lo siento, no encontré una respuesta adecuada.";
-      }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Innova Space Education</title>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-P64ZZSCZ7Z"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-P64ZZSCZ7Z');
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    #avatar-mira {
+      display: inline-block;
+      vertical-align: middle;
+      width: 60px;
+      height: 60px;
+      margin-left: 15px;
+      margin-bottom: 8px;
+      transition: filter 0.3s, opacity 0.3s;
+      opacity: 1;
+      filter: grayscale(0.4) brightness(0.8);
     }
-
-    chatHistory.push({ role: "assistant", content: aiReply });
-    document.getElementById("thinking")?.remove();
-    const html = renderMarkdown(aiReply);
-    chatBox.innerHTML += `<div><strong>MIRA:</strong><span class="chat-markdown">${html}</span></div>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
-    speak(aiReply);
-    if (window.MathJax) MathJax.typesetPromise();
-
-  } catch (error) {
-    console.error(error);
-    document.getElementById("thinking")?.remove();
-    chatBox.innerHTML += `<div><strong>MIRA:</strong> Error al conectar con la IA.</div>`;
-    setAvatarTalking(false);
-  }
-}
-
-setAvatarTalking(false);
-
-// 📸 Análisis de imagen (OCR + BLIP-2 visual)
-async function analyzeImage(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const chatBox = document.getElementById("chat-box");
-  const reader = new FileReader();
-
-  reader.onload = async function () {
-    const base64 = reader.result.split(",")[1];
-
-    chatBox.innerHTML += `
-      <div><strong>Tú:</strong><br>
-        <img src="${reader.result}" alt="Imagen subida" class="mt-2 mb-2 max-w-xs rounded-lg shadow-md border border-purple-500">
-      </div>
-    `;
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    chatBox.innerHTML += `<div id="thinking" class="text-purple-300 italic">MIRA está analizando la imagen...</div>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    try {
-      const ocrRes = await fetch("https://api.ocr.space/parse/image", {
-        method: "POST",
-        headers: {
-          apikey: "K82378316388957",
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: `base64Image=data:image/jpeg;base64,${base64}&language=spa`
-      });
-
-      const ocrData = await ocrRes.json();
-      const ocrText = ocrData?.ParsedResults?.[0]?.ParsedText || "";
-
-      if (ocrText.trim().length >= 30) {
-        document.getElementById("thinking")?.remove();
-        chatBox.innerHTML += `<div><strong>MIRA:</strong> Detecté texto en la imagen:<br><em class="text-purple-200">${ocrText}</em></div>`;
-        document.getElementById("user-input").value = `Analiza este contenido extraído de una imagen: ${ocrText}`;
-        sendMessage();
-        return;
-      }
-
-      chatBox.innerHTML += `<div class="text-purple-300">No detecté texto. Intentando analizar visualmente...</div>`;
-
-      const hfVision = await fetch("https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer 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",
-          "Content-Type": "application/octet-stream"
-        },
-        body: file
-      });
-
-      const result = await hfVision.json();
-      const caption = result?.[0]?.generated_text || "No pude interpretar visualmente la imagen.";
-
-      document.getElementById("thinking")?.remove();
-      chatBox.innerHTML += `<div><strong>MIRA:</strong> Esto es lo que veo en la imagen:<br><em class="text-purple-200">${caption}</em></div>`;
-      document.getElementById("user-input").value = `Analiza esta descripción generada visualmente: ${caption}`;
-      sendMessage();
-
-    } catch (error) {
-      console.error("Error al analizar imagen:", error);
-      document.getElementById("thinking")?.remove();
-      chatBox.innerHTML += `<div><strong>MIRA:</strong> No pude analizar la imagen.</div>`;
+    #avatar-mira.pulse {
+      animation: halo-glow 1.2s infinite alternate;
+      filter: drop-shadow(0 0 16px #a855f7) brightness(1.25);
+      opacity: 1;
     }
-  };
+    @keyframes halo-glow {
+      from { filter: drop-shadow(0 0 12px #4f46e5) brightness(1.18); }
+      to   { filter: drop-shadow(0 0 36px #38bdf8) brightness(1.45); }
+    }
+    @media (max-width: 600px) {
+      #avatar-mira { width: 40px; height: 40px; margin-left: 5px; }
+      #chat-box { font-size: 0.96rem;}
+      .max-w-3xl { max-width: 98vw;}
+    }
+    .chat-markdown table {
+      border-collapse: collapse; margin: 0.5em 0;
+      width: 100%;
+      background: #22223b;
+      color: #fafafa;
+      font-size: 0.97rem;
+    }
+    .chat-markdown th, .chat-markdown td {
+      border: 1px solid #7f5af0;
+      padding: 6px 10px;
+      text-align: left;
+    }
+    .chat-markdown th { background: #4f378b; }
+    mjx-container[jax="CHTML"] {
+      font-size: 1.25em;
+      background: transparent !important;
+      padding: 0.12em 0.2em;
+      margin: 0.35em 0;
+    }
+    .credits {
+      font-size: 1.1em;
+      color: #bbcbff;
+      text-align: center;
+      padding-bottom: 2em;
+      opacity: 0.85;
+      letter-spacing: 0.03em;
+    }
+    .credits strong {
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    #mira-info {
+      z-index: 50;
+      box-shadow: 0 6px 32px #23104a;
+      border-radius: 1.2rem;
+      background: #232146;
+      border: 2px solid #a855f7;
+      color: #fff;
+      max-width: 420px;
+      width: 92vw;
+      padding: 2.1rem 1.3rem 1.3rem 1.3rem;
+      text-align: center;
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%,-50%);
+      display: none;
+      transition: opacity .2s;
+    }
+    #mira-info h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    #mira-info button {
+      margin-top: 1.5rem;
+      background: #a855f7;
+      color: #fff;
+      padding: 0.5rem 1.3rem;
+      border-radius: 0.6rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
 
-  reader.readAsDataURL(file);
-}
+<body class="bg-gradient-to-br from-black via-indigo-900 to-purple-900 text-white font-sans scroll-smooth">
+
+  <!-- INPUT PARA SUBIR IMAGEN -->
+  <div class="w-full flex flex-col items-center mt-6 mb-4">
+    <label class="block text-sm font-medium text-purple-300">Sube una imagen para que MIRA la analice</label>
+    <input type="file" accept="image/*" onchange="analyzeImage(event)"
+           class="mt-2 text-sm text-purple-100 bg-purple-700 file:bg-purple-500 file:text-white file:px-3 file:py-1 file:rounded-md file:border-none rounded-md border border-purple-400 p-1 max-w-xs" />
+  </div>
+
+  <!-- AQUÍ DEBE IR EL CHAT -->
+  <div id="chat-box" class="px-4 max-w-3xl mx-auto mb-16 space-y-3">
+    <!-- Mensajes aquí -->
+  </div>
+
+  <!-- SCRIPT DE ANÁLISIS DE IMÁGENES -->
+  <script>
+    async function analyzeImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Image = reader.result.split(',')[1];
+        const choice = confirm("¿Quieres extraer texto de la imagen (OCR)?\nPresiona Cancelar para obtener descripción IA.");
+        const url = choice
+          ? "https://api.ocr.space/parse/image"
+          : "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base";
+
+        const headers = choice
+          ? { apikey: "K82378316388957", "Content-Type": "application/x-www-form-urlencoded" }
+          : { Authorization: "Bearer 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" };
+
+        const body = choice
+          ? new URLSearchParams({ base64Image: `data:image/png;base64,${base64Image}` }).toString()
+          : JSON.stringify({ inputs: `data:image/png;base64,${base64Image}` });
+
+        const res = await fetch(url, { method: "POST", headers, body });
+        const result = await res.json();
+
+        const text = choice
+          ? result.ParsedResults?.[0]?.ParsedText || "No se pudo leer texto."
+          : result?.[0]?.generated_text || "No se pudo generar descripción.";
+
+        const chatBox = document.getElementById("chat-box");
+        const div = document.createElement("div");
+        div.innerHTML = `<div class="bg-purple-800 text-white p-4 rounded-xl shadow-lg">
+          <strong>🖼️ MIRA (imagen):</strong><br>${text}
+        </div>`;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 🔊 Activar voz
+        if (typeof speak === "function") speak(text);
+      };
+      reader.readAsDataURL(file);
+    }
+  </script>
+
+  <!-- ARCHIVOS JAVASCRIPT -->
+  <script src="speak.js"></script>
+  <script src="chat.js"></script>
+</body>
+</html>
