@@ -14,6 +14,7 @@
     gtag('config', 'G-P64ZZSCZ7Z');
   </script>
 
+  <!-- Estilos -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -119,7 +120,7 @@
            class="mt-2 text-sm text-purple-100 bg-purple-700 file:bg-purple-500 file:text-white file:px-3 file:py-1 file:rounded-md file:border-none rounded-md border border-purple-400 p-1 max-w-xs" />
   </div>
 
-  <!-- CAJA DE CHAT -->
+  <!-- CHAT -->
   <div id="chat-box" class="px-4 max-w-3xl mx-auto mb-16 space-y-3">
     <!-- Mensajes aquí -->
   </div>
@@ -136,22 +137,22 @@
         const choice = confirm("¿Quieres extraer texto de la imagen (OCR)?\nPresiona Cancelar para obtener descripción IA.");
         const url = choice
           ? "https://api.ocr.space/parse/image"
-          : "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base";
+          : "http://localhost:3001/api/blip";
 
         const headers = choice
           ? { apikey: "K82378316388957", "Content-Type": "application/x-www-form-urlencoded" }
-          : { Authorization: "Bearer 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" };
+          : { "Content-Type": "application/json" };
 
         const body = choice
           ? new URLSearchParams({ base64Image: `data:image/png;base64,${base64Image}` }).toString()
-          : JSON.stringify({ inputs: `data:image/png;base64,${base64Image}` });
+          : JSON.stringify({ base64: base64Image });
 
         const res = await fetch(url, { method: "POST", headers, body });
         const result = await res.json();
 
         const text = choice
           ? result.ParsedResults?.[0]?.ParsedText || "No se pudo leer texto."
-          : result?.[0]?.generated_text || "No se pudo generar descripción.";
+          : result?.description || "No se pudo generar descripción.";
 
         const chatBox = document.getElementById("chat-box");
         const div = document.createElement("div");
